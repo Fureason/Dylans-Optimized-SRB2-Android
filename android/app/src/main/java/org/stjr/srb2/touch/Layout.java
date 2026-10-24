@@ -1,0 +1,34 @@
+package org.stjr.srb2.touch;
+
+import android.graphics.Canvas;
+import android.graphics.Paint;
+
+public abstract class Layout {
+    protected Button[] buttons;
+
+
+    public Layout() {}
+
+    public void draw(Canvas canvas, Paint paint, Paint pressedPaint, Paint textPaint) {
+        if (buttons == null) return;
+        for (Button b : buttons) {
+            b.draw(canvas, paint, pressedPaint, textPaint);
+        }
+    }
+
+    public boolean handleTouch(int action, float x, float y, int id, int w, int h) {
+        if (buttons == null) return false;
+        boolean pressed = false;
+        for (Button b : buttons) {
+            if (b.handleTouch(action, x, y, id, w, h))
+                pressed = true;
+        }
+
+        return pressed;
+    }
+
+    public void releaseAll() {
+        if (buttons == null) return;
+        for (Button b : buttons) b.press(false, -1);
+    }
+}

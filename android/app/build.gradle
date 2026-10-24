@@ -1,0 +1,141 @@
+plugins {
+    id 'com.android.application'
+}
+
+def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY');
+def buildAsApplication = !buildAsLibrary
+def targetAbi = project.findProperty('targetAbi') ?: 'armeabi-v7a'
+def targetTag = targetAbi == 'arm64-v8a' ? 'arm64' : 'legacy32'
+
+android {
+    namespace "org.stjr.srb2"
+    compileSdkVersion 36
+    defaultConfig {
+        if (buildAsApplication) {
+            applicationId "org.srb2.optimized"
+        }
+
+        minSdkVersion 21
+        targetSdkVersion 36
+        versionCode 510105
+        versionName "5.104-android.2-${targetTag}"
+        externalNativeBuild {
+            ndkBuild {
+
+                abiFilters targetAbi
+            }
+        }
+        flavorDimensions "assets"
+        productFlavors {
+            gameNoAssets {
+                dimension "assets"
+            }
+            gameFull {
+                dimension "assets"
+            }
+        }
+        applicationVariants.all { variant ->
+            if (variant.getFlavorName() == 'gameNoAssets') {
+                variant.mergeAssetsProvider.get().doLast {
+                    println("Removing game assets from the application package")
+                    delete(fileTree(
+                        dir: outputDir,
+                        includes: [
+                            'srb2.pk3',
+                            'zones.pk3',
+                            'characters.pk3',
+                            'patch.pk3',
+                            'music.pk3']
+                    ))
+                }
+            }
+        }
+        ext {
+            useBuildDate = false
+        }
+
+
+        def srb2PackageName = "srb2-optimized-android-${targetTag}"
+
+
+        srb2PackageName += "-v" + (defaultConfig.versionName).replace(".", "")
+
+
+        if (defaultConfig.ext.useBuildDate)
+            srb2PackageName += "-" + (new Date()).format('yyyyMMdd')
+
+        base.archivesName.set(srb2PackageName)
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "BUILD_TYPE=release"
+                }
+            }
+            signingConfig signingConfigs.debug
+        }
+        debug {
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "BUILD_TYPE=debug"
+                }
+            }
+        }
+    }
+
+
+    task generateCompTime(type: Exec) {
+        def comptimeScript = 'comptime'
+        def repositoryDir = file("$projectDir/../..").canonicalFile
+
+        println "${comptimeScript}: Generating build time"
+
+        workingDir repositoryDir
+        ignoreExitValue true
+
+        if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+            commandLine 'cmd', '/d', '/c', 'call',
+                new File(repositoryDir, comptimeScript + '.bat').absolutePath,
+                new File(repositoryDir, 'src').absolutePath
+        } else {
+            commandLine new File(repositoryDir, comptimeScript + '.sh').absolutePath,
+                new File(repositoryDir, 'src').absolutePath
+        }
+    }
+    lint {
+        abortOnError false
+    }
+    ndkVersion '28.0.12433566 rc1'
+    preBuild.dependsOn generateCompTime
+
+    if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
+        sourceSets.main {
+            jniLibs.srcDir 'libs'
+        }
+        externalNativeBuild {
+            ndkBuild {
+                path 'jni/Android.mk'
+            }
+        }
+       
+    }
+
+    if (buildAsLibrary) {
+        libraryVariants.all { variant ->
+            variant.outputs.each { output ->
+                def outputFile = output.outputFile
+                if (outputFile != null && outputFile.name.endsWith(".aar")) {
+                    def fileName = "org.stjr.srb2.aar";
+                    output.outputFile = new File(outputFile.parent, fileName);
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+}

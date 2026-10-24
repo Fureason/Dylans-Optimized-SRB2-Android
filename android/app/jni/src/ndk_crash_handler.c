@@ -1,0 +1,179 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2020-2021 by Jaime Ita Passos.
+// Copyright (C) 2025 by StarManiaKG & Bitten2Up.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
+
+
+#include "ndk_crash_handler.h"
+#include "jni_android.h"
+
+#include <errno.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <unwind.h>
+#include <dlfcn.h>
+
+typedef struct BacktraceState
+{
+	void **current;
+	void **end;
+} BacktraceState_t;
+
+static _Unwind_Reason_Code NDKCrashHandler_Unwind(struct _Unwind_Context* context, void* arg)
+{
+	BacktraceState_t *state = (BacktraceState_t *)(arg);
+	uintptr_t pc = _Unwind_GetIP(context);
+	if (pc)
+	{
+		if (state->current == state->end)
+			return _URC_END_OF_STACK;
+		else
+			*state->current++ = (void *)(pc);
+	}
+	return _URC_NO_REASON;
+}
+
+size_t NDKCrashHandler_CaptureBacktrace(void **buffer, size_t max)
+{
+	BacktraceState_t state = {buffer, buffer + max};
+	_Unwind_Backtrace(NDKCrashHandler_Unwind, &state);
+	return state.current - buffer;
+}
+
+static void NDKCrashHandler_PrintToLog(FILE *log_file, const char *fmt, ...)
+{
+	char txt[2048];
+	int length;
+	va_list argptr;
+
+	if (!log_file)
+		return;
+
+	va_start(argptr, fmt);
+	length = vsnprintf(txt, sizeof txt, fmt, argptr);
+	va_end(argptr);
+
+	if (length <= 0)
+		return;
+	if ((size_t)length >= sizeof txt)
+		length = (int)sizeof txt - 1;
+	fwrite(txt, 1, (size_t)length, log_file);
+}
+
+static void NDKCrashHandler_StackTrace(FILE *stacktrace_file)
+{
+	const int max = 128;
+	void *buffer[max];
+	size_t count = NDKCrashHandler_CaptureBacktrace(buffer, max);
+	int i;
+
+	if (!count)
+		return;
+
+	NDKCrashHandler_PrintToLog(stacktrace_file, "Stack trace:\n");
+	for (i = 0; i < count; i++)
+	{
+		Dl_info info;
+		const void *addr = buffer[i];
+		const char *symbol = "(unknown)";
+		const char *module = "(unknown)";
+		uintptr_t relative_pc = (uintptr_t)addr;
+
+		if (dladdr(addr, &info))
+		{
+			if (info.dli_sname)
+				symbol = info.dli_sname;
+			if (info.dli_fname)
+				module = info.dli_fname;
+			if (info.dli_fbase)
+				relative_pc -= (uintptr_t)info.dli_fbase;
+		}
+
+		NDKCrashHandler_PrintToLog(stacktrace_file, "#%02d pc %zx %s (%s)\n",
+			i, (size_t)relative_pc, module, symbol);
+	}
+}
+
+void NDKCrashHandler_ReportSignal(const char *sigmsg, int signum)
+{
+	FILE *crash_log = NULL;
+	char crash_path[1024];
+	const char *storage_path;
+	INT32 i;
+
+	storage_path = I_SharedStorageLocation();
+	if (!storage_path)
+		return;
+
+	snprintf(crash_path, sizeof crash_path, "%s/crash-log.txt", storage_path);
+	crash_log = fopen(crash_path, "w");
+	if (!crash_log)
+		return;
+
+#if 0
+
+	time_t rawtime;
+	struct tm timeinfo;
+	char timestr[32];
+	time(&rawtime);
+	localtime_r(&rawtime, &timeinfo);
+	strftime(timestr, 32, "%a, %d %b %Y %T %z", &timeinfo);
+
+
+	int fd = -1;
+	bt_write_file(fd, "------------------------\n");  
+	bt_write_all(fd, "An error occurred within SRB2! Send this stack trace to someone who can help!\n");
+	if (fd != -1)  
+		bt_write_stderr("(Or find crash-log.txt in your SRB2 directory.)\n");  
+
+
+	bt_write_file(fd, "Time of crash: ");
+	bt_write_file(fd, timestr);
+	bt_write_file(fd, "\n");
+
+
+
+	bt_write_file(fd, "Cause: ");
+	bt_write_file(fd, strsignal(signum));
+	bt_write_file(fd, "\n");  
+#endif
+
+
+	NDKCrashHandler_PrintToLog(crash_log, "Application killed by signal: %d, %s\n\n", signum, sigmsg ? sigmsg : "unknown");
+	NDKCrashHandler_PrintToLog(crash_log, "Device info:\n");
+	for (i = 0; JNI_DeviceInfoReference[i].info; i++)
+	{
+		JNI_DeviceInfoReference_t *ref = &JNI_DeviceInfoReference[i];
+		JNI_DeviceInfo_t info_e = ref->info_enum;
+		NDKCrashHandler_PrintToLog(crash_log, "\t%s: %s\n", ref->display_info, JNI_DeviceInfo[info_e]);
+	}
+
+	if (JNI_ABICount)
+	{
+		NDKCrashHandler_PrintToLog(crash_log, "Supported ABIs: ");
+		for (i = 0; i < JNI_ABICount; i++)
+		{
+			NDKCrashHandler_PrintToLog(crash_log, "%s", JNI_ABIList[i]);
+			if (i == JNI_ABICount-1)
+				NDKCrashHandler_PrintToLog(crash_log, "\n");
+			else
+				NDKCrashHandler_PrintToLog(crash_log, ", ");
+		}
+	}
+
+	NDKCrashHandler_PrintToLog(crash_log, "\n");
+	NDKCrashHandler_StackTrace(crash_log);
+
+	fflush(crash_log);
+	fsync(fileno(crash_log));
+	fclose(crash_log);
+}

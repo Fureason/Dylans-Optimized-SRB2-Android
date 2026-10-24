@@ -1,0 +1,2686 @@
+
+/* png.h - header file for PNG reference library
+ *
+ * libpng version 1.4.1 - February 25, 2010
+ * Copyright (c) 1998-2010 Glenn Randers-Pehrson
+ * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
+ * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
+ *
+ * This code is released under the libpng license (See LICENSE, below)
+ *
+ * Authors and maintainers:
+ *  libpng versions 0.71, May 1995, through 0.88, January 1996: Guy Schalnat
+ *  libpng versions 0.89c, June 1996, through 0.96, May 1997: Andreas Dilger
+ *  libpng versions 0.97, January 1998, through 1.4.1 - February 25, 2010: Glenn
+ *  See also "Contributing Authors", below.
+ *
+ * Note about libpng version numbers:
+ *
+ *    Due to various miscommunications, unforeseen code incompatibilities
+ *    and occasional factors outside the authors' control, version numbering
+ *    on the library has not always been consistent and straightforward.
+ *    The following table summarizes matters since version 0.89c, which was
+ *    the first widely used release:
+ *
+ *    source                 png.h  png.h  shared-lib
+ *    version                string   int  version
+ *    -------                ------ -----  ----------
+ *    0.89c "1.0 beta 3"     0.89      89  1.0.89
+ *    0.90  "1.0 beta 4"     0.90      90  0.90  [should have been 2.0.90]
+ *    0.95  "1.0 beta 5"     0.95      95  0.95  [should have been 2.0.95]
+ *    0.96  "1.0 beta 6"     0.96      96  0.96  [should have been 2.0.96]
+ *    0.97b "1.00.97 beta 7" 1.00.97   97  1.0.1 [should have been 2.0.97]
+ *    0.97c                  0.97      97  2.0.97
+ *    0.98                   0.98      98  2.0.98
+ *    0.99                   0.99      98  2.0.99
+ *    0.99a-m                0.99      99  2.0.99
+ *    1.00                   1.00     100  2.1.0 [100 should be 10000]
+ *    1.0.0      (from here on, the   100  2.1.0 [100 should be 10000]
+ *    1.0.1       png.h string is   10001  2.1.0
+ *    1.0.1a-e    identical to the  10002  from here on, the shared library
+ *    1.0.2       source version)   10002  is 2.V where V is the source code
+ *    1.0.2a-b                      10003  version, except as noted.
+ *    1.0.3                         10003
+ *    1.0.3a-d                      10004
+ *    1.0.4                         10004
+ *    1.0.4a-f                      10005
+ *    1.0.5 (+ 2 patches)           10005
+ *    1.0.5a-d                      10006
+ *    1.0.5e-r                      10100 (not source compatible)
+ *    1.0.5s-v                      10006 (not binary compatible)
+ *    1.0.6 (+ 3 patches)           10006 (still binary incompatible)
+ *    1.0.6d-f                      10007 (still binary incompatible)
+ *    1.0.6g                        10007
+ *    1.0.6h                        10007  10.6h (testing xy.z so-numbering)
+ *    1.0.6i                        10007  10.6i
+ *    1.0.6j                        10007  2.1.0.6j (incompatible with 1.0.0)
+ *    1.0.7beta11-14        DLLNUM  10007  2.1.0.7beta11-14 (binary compatible)
+ *    1.0.7beta15-18           1    10007  2.1.0.7beta15-18 (binary compatible)
+ *    1.0.7rc1-2               1    10007  2.1.0.7rc1-2 (binary compatible)
+ *    1.0.7                    1    10007  (still compatible)
+ *    1.0.8beta1-4             1    10008  2.1.0.8beta1-4
+ *    1.0.8rc1                 1    10008  2.1.0.8rc1
+ *    1.0.8                    1    10008  2.1.0.8
+ *    1.0.9beta1-6             1    10009  2.1.0.9beta1-6
+ *    1.0.9rc1                 1    10009  2.1.0.9rc1
+ *    1.0.9beta7-10            1    10009  2.1.0.9beta7-10
+ *    1.0.9rc2                 1    10009  2.1.0.9rc2
+ *    1.0.9                    1    10009  2.1.0.9
+ *    1.0.10beta1              1    10010  2.1.0.10beta1
+ *    1.0.10rc1                1    10010  2.1.0.10rc1
+ *    1.0.10                   1    10010  2.1.0.10
+ *    1.0.11beta1-3            1    10011  2.1.0.11beta1-3
+ *    1.0.11rc1                1    10011  2.1.0.11rc1
+ *    1.0.11                   1    10011  2.1.0.11
+ *    1.0.12beta1-2            2    10012  2.1.0.12beta1-2
+ *    1.0.12rc1                2    10012  2.1.0.12rc1
+ *    1.0.12                   2    10012  2.1.0.12
+ *    1.1.0a-f                 -    10100  2.1.1.0a-f (branch abandoned)
+ *    1.2.0beta1-2             2    10200  2.1.2.0beta1-2
+ *    1.2.0beta3-5             3    10200  3.1.2.0beta3-5
+ *    1.2.0rc1                 3    10200  3.1.2.0rc1
+ *    1.2.0                    3    10200  3.1.2.0
+ *    1.2.1beta1-4             3    10201  3.1.2.1beta1-4
+ *    1.2.1rc1-2               3    10201  3.1.2.1rc1-2
+ *    1.2.1                    3    10201  3.1.2.1
+ *    1.2.2beta1-6            12    10202  12.so.0.1.2.2beta1-6
+ *    1.0.13beta1             10    10013  10.so.0.1.0.13beta1
+ *    1.0.13rc1               10    10013  10.so.0.1.0.13rc1
+ *    1.2.2rc1                12    10202  12.so.0.1.2.2rc1
+ *    1.0.13                  10    10013  10.so.0.1.0.13
+ *    1.2.2                   12    10202  12.so.0.1.2.2
+ *    1.2.3rc1-6              12    10203  12.so.0.1.2.3rc1-6
+ *    1.2.3                   12    10203  12.so.0.1.2.3
+ *    1.2.4beta1-3            13    10204  12.so.0.1.2.4beta1-3
+ *    1.0.14rc1               13    10014  10.so.0.1.0.14rc1
+ *    1.2.4rc1                13    10204  12.so.0.1.2.4rc1
+ *    1.0.14                  10    10014  10.so.0.1.0.14
+ *    1.2.4                   13    10204  12.so.0.1.2.4
+ *    1.2.5beta1-2            13    10205  12.so.0.1.2.5beta1-2
+ *    1.0.15rc1-3             10    10015  10.so.0.1.0.15rc1-3
+ *    1.2.5rc1-3              13    10205  12.so.0.1.2.5rc1-3
+ *    1.0.15                  10    10015  10.so.0.1.0.15
+ *    1.2.5                   13    10205  12.so.0.1.2.5
+ *    1.2.6beta1-4            13    10206  12.so.0.1.2.6beta1-4
+ *    1.0.16                  10    10016  10.so.0.1.0.16
+ *    1.2.6                   13    10206  12.so.0.1.2.6
+ *    1.2.7beta1-2            13    10207  12.so.0.1.2.7beta1-2
+ *    1.0.17rc1               10    10017  12.so.0.1.0.17rc1
+ *    1.2.7rc1                13    10207  12.so.0.1.2.7rc1
+ *    1.0.17                  10    10017  12.so.0.1.0.17
+ *    1.2.7                   13    10207  12.so.0.1.2.7
+ *    1.2.8beta1-5            13    10208  12.so.0.1.2.8beta1-5
+ *    1.0.18rc1-5             10    10018  12.so.0.1.0.18rc1-5
+ *    1.2.8rc1-5              13    10208  12.so.0.1.2.8rc1-5
+ *    1.0.18                  10    10018  12.so.0.1.0.18
+ *    1.2.8                   13    10208  12.so.0.1.2.8
+ *    1.2.9beta1-3            13    10209  12.so.0.1.2.9beta1-3
+ *    1.2.9beta4-11           13    10209  12.so.0.9[.0]
+ *    1.2.9rc1                13    10209  12.so.0.9[.0]
+ *    1.2.9                   13    10209  12.so.0.9[.0]
+ *    1.2.10beta1-7           13    10210  12.so.0.10[.0]
+ *    1.2.10rc1-2             13    10210  12.so.0.10[.0]
+ *    1.2.10                  13    10210  12.so.0.10[.0]
+ *    1.4.0beta1-5            14    10400  14.so.0.0[.0]
+ *    1.2.11beta1-4           13    10211  12.so.0.11[.0]
+ *    1.4.0beta7-8            14    10400  14.so.0.0[.0]
+ *    1.2.11                  13    10211  12.so.0.11[.0]
+ *    1.2.12                  13    10212  12.so.0.12[.0]
+ *    1.4.0beta9-14           14    10400  14.so.0.0[.0]
+ *    1.2.13                  13    10213  12.so.0.13[.0]
+ *    1.4.0beta15-36          14    10400  14.so.0.0[.0]
+ *    1.4.0beta37-87          14    10400  14.so.14.0[.0]
+ *    1.4.0rc01               14    10400  14.so.14.0[.0]
+ *    1.4.0beta88-109         14    10400  14.so.14.0[.0]
+ *    1.4.0rc02-08            14    10400  14.so.14.0[.0]
+ *    1.4.0                   14    10400  14.so.14.0[.0]
+ *    1.4.1beta01-03          14    10401  14.so.14.1[.0]
+ *    1.4.1rc01               14    10401  14.so.14.1[.0]
+ *    1.4.1beta04-12          14    10401  14.so.14.1[.0]
+ *    1.4.1rc02-04            14    10401  14.so.14.1[.0]
+ *    1.4.1                   14    10401  14.so.14.1[.0]
+ *
+ *    Henceforth the source version will match the shared-library major
+ *    and minor numbers; the shared-library major version number will be
+ *    used for changes in backward compatibility, as it is intended.  The
+ *    PNG_LIBPNG_VER macro, which is not used within libpng but is available
+ *    for applications, is an unsigned integer of the form xyyzz corresponding
+ *    to the source version x.y.z (leading zeros in y and z).  Beta versions
+ *    were given the previous public release number plus a letter, until
+ *    version 1.0.6j; from then on they were given the upcoming public
+ *    release number plus "betaNN" or "rcN".
+ *
+ *    Binary incompatibility exists only when applications make direct access
+ *    to the info_ptr or png_ptr members through png.h, and the compiled
+ *    application is loaded with a different version of the library.
+ *
+ *    DLLNUM will change each time there are forward or backward changes
+ *    in binary compatibility (e.g., when a new feature is added).
+ *
+ * See libpng.txt or libpng.3 for more information.  The PNG specification
+ * is available as a W3C Recommendation and as an ISO Specification,
+ * <http://www.w3.org/TR/2003/REC-PNG-20031110/
+ */
+
+/*
+ * COPYRIGHT NOTICE, DISCLAIMER, and LICENSE:
+ *
+ * If you modify libpng you may insert additional notices immediately following
+ * this sentence.
+ *
+ * This code is released under the libpng license.
+ *
+ * libpng versions 1.2.6, August 15, 2004, through 1.4.1, February 25, 2010, are
+ * Copyright (c) 2004, 2006-2010 Glenn Randers-Pehrson, and are
+ * distributed according to the same disclaimer and license as libpng-1.2.5
+ * with the following individual added to the list of Contributing Authors:
+ *
+ *    Cosmin Truta
+ *
+ * libpng versions 1.0.7, July 1, 2000, through 1.2.5, October 3, 2002, are
+ * Copyright (c) 2000-2002 Glenn Randers-Pehrson, and are
+ * distributed according to the same disclaimer and license as libpng-1.0.6
+ * with the following individuals added to the list of Contributing Authors:
+ *
+ *    Simon-Pierre Cadieux
+ *    Eric S. Raymond
+ *    Gilles Vollant
+ *
+ * and with the following additions to the disclaimer:
+ *
+ *    There is no warranty against interference with your enjoyment of the
+ *    library or against infringement.  There is no warranty that our
+ *    efforts or the library will fulfill any of your particular purposes
+ *    or needs.  This library is provided with all faults, and the entire
+ *    risk of satisfactory quality, performance, accuracy, and effort is with
+ *    the user.
+ *
+ * libpng versions 0.97, January 1998, through 1.0.6, March 20, 2000, are
+ * Copyright (c) 1998, 1999, 2000 Glenn Randers-Pehrson, and are
+ * distributed according to the same disclaimer and license as libpng-0.96,
+ * with the following individuals added to the list of Contributing Authors:
+ *
+ *    Tom Lane
+ *    Glenn Randers-Pehrson
+ *    Willem van Schaik
+ *
+ * libpng versions 0.89, June 1996, through 0.96, May 1997, are
+ * Copyright (c) 1996, 1997 Andreas Dilger
+ * Distributed according to the same disclaimer and license as libpng-0.88,
+ * with the following individuals added to the list of Contributing Authors:
+ *
+ *    John Bowler
+ *    Kevin Bracey
+ *    Sam Bushell
+ *    Magnus Holmgren
+ *    Greg Roelofs
+ *    Tom Tanner
+ *
+ * libpng versions 0.5, May 1995, through 0.88, January 1996, are
+ * Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.
+ *
+ * For the purposes of this copyright and license, "Contributing Authors"
+ * is defined as the following set of individuals:
+ *
+ *    Andreas Dilger
+ *    Dave Martindale
+ *    Guy Eric Schalnat
+ *    Paul Schmidt
+ *    Tim Wegner
+ *
+ * The PNG Reference Library is supplied "AS IS".  The Contributing Authors
+ * and Group 42, Inc. disclaim all warranties, expressed or implied,
+ * including, without limitation, the warranties of merchantability and of
+ * fitness for any purpose.  The Contributing Authors and Group 42, Inc.
+ * assume no liability for direct, indirect, incidental, special, exemplary,
+ * or consequential damages, which may result from the use of the PNG
+ * Reference Library, even if advised of the possibility of such damage.
+ *
+ * Permission is hereby granted to use, copy, modify, and distribute this
+ * source code, or portions hereof, for any purpose, without fee, subject
+ * to the following restrictions:
+ *
+ * 1. The origin of this source code must not be misrepresented.
+ *
+ * 2. Altered versions must be plainly marked as such and
+ * must not be misrepresented as being the original source.
+ *
+ * 3. This Copyright notice may not be removed or altered from
+ *    any source or altered source distribution.
+ *
+ * The Contributing Authors and Group 42, Inc. specifically permit, without
+ * fee, and encourage the use of this source code as a component to
+ * supporting the PNG file format in commercial products.  If you use this
+ * source code in a product, acknowledgment is not required but would be
+ * appreciated.
+ */
+
+/*
+ * A "png_get_copyright" function is available, for convenient use in "about"
+ * boxes and the like:
+ *
+ *     printf("%s",png_get_copyright(NULL));
+ *
+ * Also, the PNG logo (in PNG format, of course) is supplied in the
+ * files "pngbar.png" and "pngbar.jpg (88x31) and "pngnow.png" (98x31).
+ */
+
+  
+                                                                    
+                                                    
+   
+
+  
+                                                                    
+                                                                  
+                               
+  
+                                                                   
+   
+
+  
+                            
+                            
+  
+                       
+  
+                                                                      
+                              
+  
+                                                                         
+                                                                           
+                                       
+  
+                                                                          
+                                                                            
+                                             
+  
+                    
+                                                
+  
+                     
+                                                   
+                                                                         
+  
+                                             
+                                                   
+                                                         
+                                                                          
+                                                 
+                                    
+                                                              
+                                    
+                                                              
+  
+                                                          
+                                                                              
+                                                                           
+                                                                            
+                                                                             
+                                                                        
+                                                                              
+                                                                             
+                                                                     
+                         
+  
+                                                                             
+                                                                     
+  
+                                                                          
+                           
+  
+                              
+                          
+                              
+   
+
+#ifndef PNG_H
+#define PNG_H
+
+                                                                         
+                                                                    
+                                                                     
+                                                               
+   
+
+ 
+#define PNG_LIBPNG_VER_STRING "1.4.1"
+#define PNG_HEADER_VERSION_STRING \
+   " libpng version 1.4.1 - February 25, 2010\n"
+
+#define PNG_LIBPNG_VER_SONUM   14
+#define PNG_LIBPNG_VER_DLLNUM  14
+
+ 
+#define PNG_LIBPNG_VER_MAJOR   1
+#define PNG_LIBPNG_VER_MINOR   4
+#define PNG_LIBPNG_VER_RELEASE 1
+                                                               
+                                                    
+   
+
+#define PNG_LIBPNG_VER_BUILD  0
+
+ 
+#define PNG_LIBPNG_BUILD_ALPHA    1
+#define PNG_LIBPNG_BUILD_BETA     2
+#define PNG_LIBPNG_BUILD_RC       3
+#define PNG_LIBPNG_BUILD_STABLE   4
+#define PNG_LIBPNG_BUILD_RELEASE_STATUS_MASK 7
+
+ 
+#define PNG_LIBPNG_BUILD_PATCH    8                     
+                                                                      
+#define PNG_LIBPNG_BUILD_PRIVATE 16                        
+                                                                  
+#define PNG_LIBPNG_BUILD_SPECIAL 32                        
+                                                                  
+
+#define PNG_LIBPNG_BUILD_BASE_TYPE PNG_LIBPNG_BUILD_BETA
+
+                                                                              
+                                     
+                                                                   
+                                                              
+                                                                  
+   
+#define PNG_LIBPNG_VER 10401  
+
+#ifndef PNG_VERSION_INFO_ONLY
+ 
+#include "zlib.h"
+#endif
+
+ 
+#include "pngconf.h"
+
+  
+                        
+  
+                                             
+                                                                 
+                                                                    
+                                 
+  
+                                                                    
+                                                                 
+                                                               
+                                                           
+   
+
+#ifdef PNG_USER_PRIVATEBUILD
+#  define PNG_LIBPNG_BUILD_TYPE \
+          (PNG_LIBPNG_BUILD_BASE_TYPE | PNG_LIBPNG_BUILD_PRIVATE)
+#else
+#  ifdef PNG_LIBPNG_SPECIALBUILD
+#    define PNG_LIBPNG_BUILD_TYPE \
+            (PNG_LIBPNG_BUILD_BASE_TYPE | PNG_LIBPNG_BUILD_SPECIAL)
+#  else
+#    define PNG_LIBPNG_BUILD_TYPE (PNG_LIBPNG_BUILD_BASE_TYPE)
+#  endif
+#endif
+
+#ifndef PNG_VERSION_INFO_ONLY
+
+ 
+#ifdef __cplusplus
+extern "C" {
+#endif  
+
+                                                                         
+                                                                            
+                                                                         
+                                                      
+   
+
+ 
+#if !defined(PNG_NO_EXTERN) || defined(PNG_ALWAYS_EXTERN)
+                                                                           
+                     
+   
+#define png_libpng_ver png_get_header_ver(NULL)
+
+#endif  
+
+                                                                            
+                                                                        
+                                                 
+   
+typedef struct png_color_struct
+{
+   png_byte red;
+   png_byte green;
+   png_byte blue;
+} png_color;
+typedef png_color FAR * png_colorp;
+typedef png_color FAR * FAR * png_colorpp;
+
+typedef struct png_color_16_struct
+{
+   png_byte index;     
+   png_uint_16 red;    
+   png_uint_16 green;
+   png_uint_16 blue;
+   png_uint_16 gray;   
+} png_color_16;
+typedef png_color_16 FAR * png_color_16p;
+typedef png_color_16 FAR * FAR * png_color_16pp;
+
+typedef struct png_color_8_struct
+{
+   png_byte red;    
+   png_byte green;
+   png_byte blue;
+   png_byte gray;   
+   png_byte alpha;  
+} png_color_8;
+typedef png_color_8 FAR * png_color_8p;
+typedef png_color_8 FAR * FAR * png_color_8pp;
+
+  
+                                                                       
+                  
+   
+typedef struct png_sPLT_entry_struct
+{
+   png_uint_16 red;
+   png_uint_16 green;
+   png_uint_16 blue;
+   png_uint_16 alpha;
+   png_uint_16 frequency;
+} png_sPLT_entry;
+typedef png_sPLT_entry FAR * png_sPLT_entryp;
+typedef png_sPLT_entry FAR * FAR * png_sPLT_entrypp;
+
+                                                                             
+                                                                          
+                                                                           
+   
+
+typedef struct png_sPLT_struct
+{
+   png_charp name;            
+   png_byte depth;            
+   png_sPLT_entryp entries;   
+   png_int_32 nentries;       
+} png_sPLT_t;
+typedef png_sPLT_t FAR * png_sPLT_tp;
+typedef png_sPLT_t FAR * FAR * png_sPLT_tpp;
+
+#ifdef PNG_TEXT_SUPPORTED
+                                                                       
+                                                                   
+                                                                         
+                                                                               
+                                                                          
+                                                                           
+                                                                              
+   
+typedef struct png_text_struct
+{
+   int  compression;                            
+                                           
+                                              
+                                           
+                                                  
+   png_charp key;           
+   png_charp text;                                                   
+                                                  
+   png_size_t text_length;  
+#ifdef PNG_iTXt_SUPPORTED
+   png_size_t itxt_length;  
+   png_charp lang;                                          
+                                                  
+   png_charp lang_key;                                                  
+                                                        
+#endif
+} png_text;
+typedef png_text FAR * png_textp;
+typedef png_text FAR * FAR * png_textpp;
+#endif
+
+                                                                      
+                                                                            
+#define PNG_TEXT_COMPRESSION_NONE_WR -3
+#define PNG_TEXT_COMPRESSION_zTXt_WR -2
+#define PNG_TEXT_COMPRESSION_NONE    -1
+#define PNG_TEXT_COMPRESSION_zTXt     0
+#define PNG_ITXT_COMPRESSION_NONE     1
+#define PNG_ITXT_COMPRESSION_zTXt     2
+#define PNG_TEXT_COMPRESSION_LAST     3   
+
+                                                                    
+                                                                       
+                                                                      
+                                                                       
+                                                  
+   
+typedef struct png_time_struct
+{
+   png_uint_16 year;  
+   png_byte month;    
+   png_byte day;      
+   png_byte hour;     
+   png_byte minute;   
+   png_byte second;   
+} png_time;
+typedef png_time FAR * png_timep;
+typedef png_time FAR * FAR * png_timepp;
+
+#if defined(PNG_UNKNOWN_CHUNKS_SUPPORTED) || \
+ defined(PNG_HANDLE_AS_UNKNOWN_SUPPORTED)
+                                                                            
+                                                                  
+                                                                        
+                              
+   
+typedef struct png_unknown_chunk_t
+{
+    png_byte name[5];
+    png_byte *data;
+    png_size_t size;
+
+     
+    png_byte location;  
+}
+png_unknown_chunk;
+typedef png_unknown_chunk FAR * png_unknown_chunkp;
+typedef png_unknown_chunk FAR * FAR * png_unknown_chunkpp;
+#endif
+
+                                                                      
+                                                                      
+                                                                    
+                                                                         
+                                                                 
+                                                                     
+                                                                         
+  
+                                                                        
+                                                                       
+                                                                        
+                                                                 
+                                                                       
+                                                                   
+                                                                      
+                 
+  
+                                                                         
+                                                                             
+                                                              
+  
+                                                                           
+                                                                      
+                                                                        
+                                                                            
+                                                                               
+                                                                         
+                                    
+  
+                                                                
+                                                              
+                                                                  
+                                                                   
+                                                                      
+                                                                    
+                                                                   
+                                                                         
+                                          
+   
+typedef struct png_info_struct
+{
+    
+   png_uint_32 width PNG_DEPSTRUCT;   
+   png_uint_32 height PNG_DEPSTRUCT;  
+   png_uint_32 valid PNG_DEPSTRUCT;                                    
+                                                 
+   png_size_t rowbytes PNG_DEPSTRUCT;                                         
+                                               
+   png_colorp palette PNG_DEPSTRUCT;                              
+                                                                       
+   png_uint_16 num_palette PNG_DEPSTRUCT;                              
+                                                                
+   png_uint_16 num_trans PNG_DEPSTRUCT;                                   
+                                                            
+   png_byte bit_depth PNG_DEPSTRUCT;                                       
+                                                           
+   png_byte color_type PNG_DEPSTRUCT;                                 
+                                                           
+    
+   png_byte compression_type PNG_DEPSTRUCT;           
+                                                                                
+   png_byte filter_type PNG_DEPSTRUCT;                                   
+                                                           
+   png_byte interlace_type PNG_DEPSTRUCT;                              
+                                                                   
+
+    
+   png_byte channels PNG_DEPSTRUCT;                                     
+                                                                  
+   png_byte pixel_depth PNG_DEPSTRUCT;     
+   png_byte spare_byte PNG_DEPSTRUCT;                                  
+                                                          
+   png_byte signature[8] PNG_DEPSTRUCT;                                
+                                                                  
+
+                                                                      
+                                                                       
+                                                                        
+                                                  
+      
+
+#if defined(PNG_gAMA_SUPPORTED) && defined(PNG_FLOATING_POINT_SUPPORTED)
+                                                                      
+                                                                       
+                                                           
+      
+   float gamma PNG_DEPSTRUCT;                         
+                                                              
+#endif
+
+#ifdef PNG_sRGB_SUPPORTED
+     
+     
+   png_byte srgb_intent PNG_DEPSTRUCT;                         
+                                                            
+#endif
+
+#ifdef PNG_TEXT_SUPPORTED
+                                                                      
+                                                                              
+                                                                 
+                                                                            
+                                                                            
+                                                                              
+                     
+      
+   int num_text PNG_DEPSTRUCT;  
+   int max_text PNG_DEPSTRUCT;  
+   png_textp text PNG_DEPSTRUCT;  
+#endif  
+
+#ifdef PNG_tIME_SUPPORTED
+                                                                     
+                                                                         
+      
+   png_time mod_time PNG_DEPSTRUCT;
+#endif
+
+#ifdef PNG_sBIT_SUPPORTED
+                                                                        
+                                                                         
+                                                                         
+                                                            
+                                          
+      
+   png_color_8 sig_bit PNG_DEPSTRUCT;  
+#endif
+
+#if defined(PNG_tRNS_SUPPORTED) || defined(PNG_READ_EXPAND_SUPPORTED) || \
+defined(PNG_READ_BACKGROUND_SUPPORTED)
+                                                                       
+                                                                        
+                                                                         
+                                                                      
+                                                                            
+                                                                         
+                                                                         
+                                                           
+      
+   png_bytep trans_alpha PNG_DEPSTRUCT;                                
+                                                      
+   png_color_16 trans_color PNG_DEPSTRUCT;                         
+                                                                  
+#endif
+
+#if defined(PNG_bKGD_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED)
+                                                                      
+                                                                          
+                                                                          
+                                                                       
+                                                                        
+      
+   png_color_16 background PNG_DEPSTRUCT;
+#endif
+
+#ifdef PNG_oFFs_SUPPORTED
+                                                                            
+                                                                           
+                                                                          
+                                                                           
+      
+   png_int_32 x_offset PNG_DEPSTRUCT;  
+   png_int_32 y_offset PNG_DEPSTRUCT;  
+   png_byte offset_unit_type PNG_DEPSTRUCT;  
+#endif
+
+#ifdef PNG_pHYs_SUPPORTED
+                                                                      
+                                                                        
+                                                                            
+      
+   png_uint_32 x_pixels_per_unit PNG_DEPSTRUCT;  
+   png_uint_32 y_pixels_per_unit PNG_DEPSTRUCT;  
+   png_byte phys_unit_type PNG_DEPSTRUCT;                        
+                                                                      
+#endif
+
+#ifdef PNG_hIST_SUPPORTED
+                                                                         
+                                                                          
+                                                                            
+                                                                          
+                  
+      
+   png_uint_16p hist PNG_DEPSTRUCT;
+#endif
+
+#ifdef PNG_cHRM_SUPPORTED
+                                                                           
+                                                                            
+                                                                        
+                                                                  
+                                                                  
+      
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+   float x_white PNG_DEPSTRUCT;
+   float y_white PNG_DEPSTRUCT;
+   float x_red PNG_DEPSTRUCT;
+   float y_red PNG_DEPSTRUCT;
+   float x_green PNG_DEPSTRUCT;
+   float y_green PNG_DEPSTRUCT;
+   float x_blue PNG_DEPSTRUCT;
+   float y_blue PNG_DEPSTRUCT;
+#endif
+#endif
+
+#ifdef PNG_pCAL_SUPPORTED
+                                                                        
+                                                                        
+                                                                       
+                                                                         
+                                                                        
+                                                                        
+                                                                      
+                                                                        
+                                                                        
+                                                                
+      
+   png_charp pcal_purpose PNG_DEPSTRUCT;   
+   png_int_32 pcal_X0 PNG_DEPSTRUCT;       
+   png_int_32 pcal_X1 PNG_DEPSTRUCT;       
+   png_charp pcal_units PNG_DEPSTRUCT;                                     
+                                                     
+   png_charpp pcal_params PNG_DEPSTRUCT;                             
+                                                                
+   png_byte pcal_type PNG_DEPSTRUCT;                      
+                                                                         
+   png_byte pcal_nparams PNG_DEPSTRUCT;                                
+                                                              
+#endif
+
+ 
+   png_uint_32 free_me PNG_DEPSTRUCT;                             
+                                                                       
+
+#if defined(PNG_UNKNOWN_CHUNKS_SUPPORTED) || \
+ defined(PNG_HANDLE_AS_UNKNOWN_SUPPORTED)
+    
+   png_unknown_chunkp unknown_chunks PNG_DEPSTRUCT;
+   png_size_t unknown_chunks_num PNG_DEPSTRUCT;
+#endif
+
+#ifdef PNG_iCCP_SUPPORTED
+    
+   png_charp iccp_name PNG_DEPSTRUCT;      
+   png_charp iccp_profile PNG_DEPSTRUCT;                                   
+                                                            
+                             
+   png_uint_32 iccp_proflen PNG_DEPSTRUCT;   
+   png_byte iccp_compression PNG_DEPSTRUCT;  
+#endif
+
+#ifdef PNG_sPLT_SUPPORTED
+    
+   png_sPLT_tp splt_palettes PNG_DEPSTRUCT;
+   png_uint_32 splt_palettes_num PNG_DEPSTRUCT;
+#endif
+
+#ifdef PNG_sCAL_SUPPORTED
+                                                                    
+                                                                             
+                                                                     
+                                                                         
+                                                                        
+                                                                          
+      
+   png_byte scal_unit PNG_DEPSTRUCT;          
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+   double scal_pixel_width PNG_DEPSTRUCT;     
+   double scal_pixel_height PNG_DEPSTRUCT;    
+#endif
+#ifdef PNG_FIXED_POINT_SUPPORTED
+   png_charp scal_s_width PNG_DEPSTRUCT;      
+   png_charp scal_s_height PNG_DEPSTRUCT;     
+#endif
+#endif
+
+#ifdef PNG_INFO_IMAGE_SUPPORTED
+                                                                    
+                 
+    
+   png_bytepp row_pointers PNG_DEPSTRUCT;         
+#endif
+
+#if defined(PNG_FIXED_POINT_SUPPORTED) && defined(PNG_gAMA_SUPPORTED)
+   png_fixed_point int_gamma PNG_DEPSTRUCT;                   
+                                                                            
+#endif
+
+#if defined(PNG_cHRM_SUPPORTED) && defined(PNG_FIXED_POINT_SUPPORTED)
+   png_fixed_point int_x_white PNG_DEPSTRUCT;
+   png_fixed_point int_y_white PNG_DEPSTRUCT;
+   png_fixed_point int_x_red PNG_DEPSTRUCT;
+   png_fixed_point int_y_red PNG_DEPSTRUCT;
+   png_fixed_point int_x_green PNG_DEPSTRUCT;
+   png_fixed_point int_y_green PNG_DEPSTRUCT;
+   png_fixed_point int_x_blue PNG_DEPSTRUCT;
+   png_fixed_point int_y_blue PNG_DEPSTRUCT;
+#endif
+
+} png_info;
+
+typedef png_info FAR * png_infop;
+typedef png_info FAR * FAR * png_infopp;
+
+ 
+#define PNG_UINT_31_MAX ((png_uint_32)0x7fffffffL)
+#define PNG_UINT_32_MAX ((png_uint_32)(-1))
+#define PNG_SIZE_MAX ((png_size_t)(-1))
+
+ 
+ 
+#define PNG_COLOR_MASK_PALETTE    1
+#define PNG_COLOR_MASK_COLOR      2
+#define PNG_COLOR_MASK_ALPHA      4
+
+ 
+#define PNG_COLOR_TYPE_GRAY 0
+#define PNG_COLOR_TYPE_PALETTE  (PNG_COLOR_MASK_COLOR | PNG_COLOR_MASK_PALETTE)
+#define PNG_COLOR_TYPE_RGB        (PNG_COLOR_MASK_COLOR)
+#define PNG_COLOR_TYPE_RGB_ALPHA  (PNG_COLOR_MASK_COLOR | PNG_COLOR_MASK_ALPHA)
+#define PNG_COLOR_TYPE_GRAY_ALPHA (PNG_COLOR_MASK_ALPHA)
+ 
+#define PNG_COLOR_TYPE_RGBA  PNG_COLOR_TYPE_RGB_ALPHA
+#define PNG_COLOR_TYPE_GA  PNG_COLOR_TYPE_GRAY_ALPHA
+
+ 
+#define PNG_COMPRESSION_TYPE_BASE 0  
+#define PNG_COMPRESSION_TYPE_DEFAULT PNG_COMPRESSION_TYPE_BASE
+
+ 
+#define PNG_FILTER_TYPE_BASE      0  
+#define PNG_INTRAPIXEL_DIFFERENCING 64  
+#define PNG_FILTER_TYPE_DEFAULT   PNG_FILTER_TYPE_BASE
+
+ 
+#define PNG_INTERLACE_NONE        0  
+#define PNG_INTERLACE_ADAM7       1  
+#define PNG_INTERLACE_LAST        2  
+
+ 
+#define PNG_OFFSET_PIXEL          0  
+#define PNG_OFFSET_MICROMETER     1  
+#define PNG_OFFSET_LAST           2  
+
+ 
+#define PNG_EQUATION_LINEAR       0  
+#define PNG_EQUATION_BASE_E       1  
+#define PNG_EQUATION_ARBITRARY    2  
+#define PNG_EQUATION_HYPERBOLIC   3  
+#define PNG_EQUATION_LAST         4  
+
+ 
+#define PNG_SCALE_UNKNOWN         0  
+#define PNG_SCALE_METER           1  
+#define PNG_SCALE_RADIAN          2  
+#define PNG_SCALE_LAST            3  
+
+ 
+#define PNG_RESOLUTION_UNKNOWN    0  
+#define PNG_RESOLUTION_METER      1  
+#define PNG_RESOLUTION_LAST       2  
+
+ 
+#define PNG_sRGB_INTENT_PERCEPTUAL 0
+#define PNG_sRGB_INTENT_RELATIVE   1
+#define PNG_sRGB_INTENT_SATURATION 2
+#define PNG_sRGB_INTENT_ABSOLUTE   3
+#define PNG_sRGB_INTENT_LAST       4  
+
+ 
+#define PNG_KEYWORD_MAX_LENGTH     79
+
+ 
+#define PNG_MAX_PALETTE_LENGTH    256
+
+                                                                          
+                                                                             
+                                                                          
+                                                         
+   
+#define PNG_INFO_gAMA 0x0001
+#define PNG_INFO_sBIT 0x0002
+#define PNG_INFO_cHRM 0x0004
+#define PNG_INFO_PLTE 0x0008
+#define PNG_INFO_tRNS 0x0010
+#define PNG_INFO_bKGD 0x0020
+#define PNG_INFO_hIST 0x0040
+#define PNG_INFO_pHYs 0x0080
+#define PNG_INFO_oFFs 0x0100
+#define PNG_INFO_tIME 0x0200
+#define PNG_INFO_pCAL 0x0400
+#define PNG_INFO_sRGB 0x0800    
+#define PNG_INFO_iCCP 0x1000    
+#define PNG_INFO_sPLT 0x2000    
+#define PNG_INFO_sCAL 0x4000    
+#define PNG_INFO_IDAT 0x8000L   
+
+                                                                
+                                                                
+                                   
+   
+typedef struct png_row_info_struct
+{
+   png_uint_32 width;  
+   png_size_t rowbytes;  
+   png_byte color_type;  
+   png_byte bit_depth;  
+   png_byte channels;  
+   png_byte pixel_depth;  
+} png_row_info;
+
+typedef png_row_info FAR * png_row_infop;
+typedef png_row_info FAR * FAR * png_row_infopp;
+
+                                                                           
+                                                                            
+                                                                          
+                                                                          
+                                  
+   
+typedef struct png_struct_def png_struct;
+typedef png_struct FAR * png_structp;
+
+typedef void (PNGAPI *png_error_ptr) PNGARG((png_structp, png_const_charp));
+typedef void (PNGAPI *png_rw_ptr) PNGARG((png_structp, png_bytep, png_size_t));
+typedef void (PNGAPI *png_flush_ptr) PNGARG((png_structp));
+typedef void (PNGAPI *png_read_status_ptr) PNGARG((png_structp, png_uint_32,
+   int));
+typedef void (PNGAPI *png_write_status_ptr) PNGARG((png_structp, png_uint_32,
+   int));
+
+#ifdef PNG_PROGRESSIVE_READ_SUPPORTED
+typedef void (PNGAPI *png_progressive_info_ptr) PNGARG((png_structp,
+   png_infop));
+typedef void (PNGAPI *png_progressive_end_ptr) PNGARG((png_structp, png_infop));
+typedef void (PNGAPI *png_progressive_row_ptr) PNGARG((png_structp, png_bytep,
+   png_uint_32, int));
+#endif
+
+#if defined(PNG_READ_USER_TRANSFORM_SUPPORTED) || \
+    defined(PNG_WRITE_USER_TRANSFORM_SUPPORTED)
+typedef void (PNGAPI *png_user_transform_ptr) PNGARG((png_structp,
+    png_row_infop, png_bytep));
+#endif
+
+#ifdef PNG_USER_CHUNKS_SUPPORTED
+typedef int (PNGAPI *png_user_chunk_ptr) PNGARG((png_structp,
+   png_unknown_chunkp));
+#endif
+#ifdef PNG_UNKNOWN_CHUNKS_SUPPORTED
+typedef void (PNGAPI *png_unknown_chunk_ptr) PNGARG((png_structp));
+#endif
+#ifdef PNG_SETJMP_SUPPORTED
+                                                                 
+                                                                      
+              
+   
+typedef void (PNGAPI *png_longjmp_ptr) PNGARG((jmp_buf, int));
+#endif
+
+ 
+#define PNG_TRANSFORM_IDENTITY       0x0000     
+#define PNG_TRANSFORM_STRIP_16       0x0001     
+#define PNG_TRANSFORM_STRIP_ALPHA    0x0002     
+#define PNG_TRANSFORM_PACKING        0x0004     
+#define PNG_TRANSFORM_PACKSWAP       0x0008     
+#define PNG_TRANSFORM_EXPAND         0x0010     
+#define PNG_TRANSFORM_INVERT_MONO    0x0020     
+#define PNG_TRANSFORM_SHIFT          0x0040     
+#define PNG_TRANSFORM_BGR            0x0080     
+#define PNG_TRANSFORM_SWAP_ALPHA     0x0100     
+#define PNG_TRANSFORM_SWAP_ENDIAN    0x0200     
+#define PNG_TRANSFORM_INVERT_ALPHA   0x0400     
+#define PNG_TRANSFORM_STRIP_FILLER   0x0800     
+ 
+#define PNG_TRANSFORM_STRIP_FILLER_BEFORE PNG_TRANSFORM_STRIP_FILLER
+#define PNG_TRANSFORM_STRIP_FILLER_AFTER 0x1000  
+ 
+#define PNG_TRANSFORM_GRAY_TO_RGB   0x2000       
+
+ 
+#define PNG_FLAG_MNG_EMPTY_PLTE     0x01
+#define PNG_FLAG_MNG_FILTER_64      0x04
+#define PNG_ALL_MNG_FEATURES        0x05
+
+typedef png_voidp (*png_malloc_ptr) PNGARG((png_structp, png_alloc_size_t));
+typedef void (*png_free_ptr) PNGARG((png_structp, png_voidp));
+
+                                                                        
+                                                                        
+                                                                        
+                                                                        
+               
+   
+
+struct png_struct_def
+{
+#ifdef PNG_SETJMP_SUPPORTED
+   jmp_buf jmpbuf PNG_DEPSTRUCT;             
+   png_longjmp_ptr longjmp_fn PNG_DEPSTRUCT;                        
+                                                           
+#endif
+   png_error_ptr error_fn PNG_DEPSTRUCT;                            
+                                                                     
+   png_error_ptr warning_fn PNG_DEPSTRUCT;                          
+                                                          
+   png_voidp error_ptr PNG_DEPSTRUCT;                                  
+                                                                 
+   png_rw_ptr write_data_fn PNG_DEPSTRUCT;                         
+                                                             
+   png_rw_ptr read_data_fn PNG_DEPSTRUCT;                          
+                                                            
+   png_voidp io_ptr PNG_DEPSTRUCT;                                      
+                                                                   
+
+#ifdef PNG_READ_USER_TRANSFORM_SUPPORTED
+   png_user_transform_ptr read_user_transform_fn PNG_DEPSTRUCT;             
+                                                                             
+#endif
+
+#ifdef PNG_WRITE_USER_TRANSFORM_SUPPORTED
+   png_user_transform_ptr write_user_transform_fn PNG_DEPSTRUCT;              
+                                                                              
+#endif
+
+ 
+#ifdef PNG_USER_TRANSFORM_PTR_SUPPORTED
+#if defined(PNG_READ_USER_TRANSFORM_SUPPORTED) || \
+    defined(PNG_WRITE_USER_TRANSFORM_SUPPORTED)
+   png_voidp user_transform_ptr PNG_DEPSTRUCT;                        
+                                                                       
+   png_byte user_transform_depth PNG_DEPSTRUCT;                        
+                                                                           
+   png_byte user_transform_channels PNG_DEPSTRUCT;                    
+                                                                           
+#endif
+#endif
+
+   png_uint_32 mode PNG_DEPSTRUCT;                                     
+                                                              
+   png_uint_32 flags PNG_DEPSTRUCT;                                    
+                                                                  
+   png_uint_32 transformations PNG_DEPSTRUCT;                         
+                                                              
+
+   z_stream zstream PNG_DEPSTRUCT;                                     
+                                                                   
+   png_bytep zbuf PNG_DEPSTRUCT;             
+   png_size_t zbuf_size PNG_DEPSTRUCT;       
+   int zlib_level PNG_DEPSTRUCT;             
+   int zlib_method PNG_DEPSTRUCT;            
+   int zlib_window_bits PNG_DEPSTRUCT;                                      
+                                                      
+   int zlib_mem_level PNG_DEPSTRUCT;                                        
+                                                       
+   int zlib_strategy PNG_DEPSTRUCT;                                  
+                                                          
+
+   png_uint_32 width PNG_DEPSTRUCT;          
+   png_uint_32 height PNG_DEPSTRUCT;         
+   png_uint_32 num_rows PNG_DEPSTRUCT;       
+   png_uint_32 usr_width PNG_DEPSTRUCT;      
+   png_size_t rowbytes PNG_DEPSTRUCT;        
+#if 0  
+   png_size_t irowbytes PNG_DEPSTRUCT;
+#endif
+ 
+#ifdef PNG_USER_LIMITS_SUPPORTED
+                                                                  
+                                                       
+                                                                    
+                     
+      
+   png_alloc_size_t user_chunk_malloc_max PNG_DEPSTRUCT;
+#endif
+   png_uint_32 iwidth PNG_DEPSTRUCT;                                      
+                                                               
+   png_uint_32 row_number PNG_DEPSTRUCT;     
+   png_bytep prev_row PNG_DEPSTRUCT;                                  
+                                                                  
+   png_bytep row_buf PNG_DEPSTRUCT;                                  
+                                                                  
+   png_bytep sub_row PNG_DEPSTRUCT;                                    
+                                                                
+   png_bytep up_row PNG_DEPSTRUCT;                                    
+                                                                
+   png_bytep avg_row PNG_DEPSTRUCT;                                    
+                                                                
+   png_bytep paeth_row PNG_DEPSTRUCT;                                    
+                                                                
+   png_row_info row_info PNG_DEPSTRUCT;                               
+                                                          
+
+   png_uint_32 idat_size PNG_DEPSTRUCT;      
+   png_uint_32 crc PNG_DEPSTRUCT;            
+   png_colorp palette PNG_DEPSTRUCT;         
+   png_uint_16 num_palette PNG_DEPSTRUCT;                                
+                                                         
+   png_uint_16 num_trans PNG_DEPSTRUCT;      
+   png_byte chunk_name[5] PNG_DEPSTRUCT;                                      
+                                                       
+   png_byte compression PNG_DEPSTRUCT;                              
+                                                            
+   png_byte filter PNG_DEPSTRUCT;            
+   png_byte interlaced PNG_DEPSTRUCT;                             
+                                                                     
+   png_byte pass PNG_DEPSTRUCT;              
+   png_byte do_filter PNG_DEPSTRUCT;                                
+                                                                     
+   png_byte color_type PNG_DEPSTRUCT;        
+   png_byte bit_depth PNG_DEPSTRUCT;         
+   png_byte usr_bit_depth PNG_DEPSTRUCT;     
+   png_byte pixel_depth PNG_DEPSTRUCT;       
+   png_byte channels PNG_DEPSTRUCT;          
+   png_byte usr_channels PNG_DEPSTRUCT;      
+   png_byte sig_bytes PNG_DEPSTRUCT;                                        
+                                                               
+
+#if defined(PNG_READ_FILLER_SUPPORTED) || defined(PNG_WRITE_FILLER_SUPPORTED)
+   png_uint_16 filler PNG_DEPSTRUCT;                                    
+                                                              
+#endif
+
+#ifdef PNG_bKGD_SUPPORTED
+   png_byte background_gamma_type PNG_DEPSTRUCT;
+#  ifdef PNG_FLOATING_POINT_SUPPORTED
+   float background_gamma PNG_DEPSTRUCT;
+#  endif
+   png_color_16 background PNG_DEPSTRUCT;                         
+                                                                    
+#ifdef PNG_READ_GAMMA_SUPPORTED
+   png_color_16 background_1 PNG_DEPSTRUCT;                         
+                                                              
+#endif
+#endif  
+
+#ifdef PNG_WRITE_FLUSH_SUPPORTED
+   png_flush_ptr output_flush_fn PNG_DEPSTRUCT;                         
+                                                        
+   png_uint_32 flush_dist PNG_DEPSTRUCT;                                    
+                                                              
+   png_uint_32 flush_rows PNG_DEPSTRUCT;                                   
+                                                            
+#endif
+
+#if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED)
+   int gamma_shift PNG_DEPSTRUCT;                                       
+                                                         
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+   float gamma PNG_DEPSTRUCT;           
+   float screen_gamma PNG_DEPSTRUCT;                        
+                                                               
+#endif
+#endif
+
+#if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED)
+   png_bytep gamma_table PNG_DEPSTRUCT;                             
+                                                             
+   png_bytep gamma_from_1 PNG_DEPSTRUCT;     
+   png_bytep gamma_to_1 PNG_DEPSTRUCT;       
+   png_uint_16pp gamma_16_table PNG_DEPSTRUCT;                          
+                                                                
+   png_uint_16pp gamma_16_from_1 PNG_DEPSTRUCT;                        
+                                                            
+   png_uint_16pp gamma_16_to_1 PNG_DEPSTRUCT;  
+#endif
+
+#if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_sBIT_SUPPORTED)
+   png_color_8 sig_bit PNG_DEPSTRUCT;                                  
+                                                                   
+#endif
+
+#if defined(PNG_READ_SHIFT_SUPPORTED) || defined(PNG_WRITE_SHIFT_SUPPORTED)
+   png_color_8 shift PNG_DEPSTRUCT;                                     
+                                                               
+#endif
+
+#if defined(PNG_tRNS_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED) \
+ || defined(PNG_READ_EXPAND_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED)
+   png_bytep trans_alpha PNG_DEPSTRUCT;                              
+                                                                      
+   png_color_16 trans_color PNG_DEPSTRUCT;                          
+                                                                    
+#endif
+
+   png_read_status_ptr read_row_fn PNG_DEPSTRUCT;                       
+                                                                        
+   png_write_status_ptr write_row_fn PNG_DEPSTRUCT;                     
+                                                                        
+#ifdef PNG_PROGRESSIVE_READ_SUPPORTED
+   png_progressive_info_ptr info_fn PNG_DEPSTRUCT;                       
+                                                                        
+   png_progressive_row_ptr row_fn PNG_DEPSTRUCT;                       
+                                                                             
+   png_progressive_end_ptr end_fn PNG_DEPSTRUCT;                        
+                                                                    
+   png_bytep save_buffer_ptr PNG_DEPSTRUCT;                              
+                                                                    
+   png_bytep save_buffer PNG_DEPSTRUCT;                                    
+                                                                  
+   png_bytep current_buffer_ptr PNG_DEPSTRUCT;                           
+                                                                       
+   png_bytep current_buffer PNG_DEPSTRUCT;                               
+                                                                  
+   png_uint_32 push_length PNG_DEPSTRUCT;                                  
+                                                              
+   png_uint_32 skip_length PNG_DEPSTRUCT;                             
+                                                                   
+   png_size_t save_buffer_size PNG_DEPSTRUCT;                           
+                                                                       
+   png_size_t save_buffer_max PNG_DEPSTRUCT;                       
+                                                                    
+   png_size_t buffer_size PNG_DEPSTRUCT;                             
+                                                                             
+   png_size_t current_buffer_size PNG_DEPSTRUCT;                        
+                                                                          
+   int process_mode PNG_DEPSTRUCT;                                     
+                                                                           
+   int cur_palette PNG_DEPSTRUCT;                                         
+                                                                      
+
+#  ifdef PNG_TEXT_SUPPORTED
+     png_size_t current_text_size PNG_DEPSTRUCT;                     
+                                                                        
+     png_size_t current_text_left PNG_DEPSTRUCT;                        
+                                                                         
+     png_charp current_text PNG_DEPSTRUCT;                              
+                                                               
+     png_charp current_text_ptr PNG_DEPSTRUCT;                        
+                                                                        
+#  endif  
+
+#endif  
+
+#if defined(__TURBOC__) && !defined(_Windows) && !defined(__FLAT__)
+ 
+   png_bytepp offset_table_ptr PNG_DEPSTRUCT;
+   png_bytep offset_table PNG_DEPSTRUCT;
+   png_uint_16 offset_table_number PNG_DEPSTRUCT;
+   png_uint_16 offset_table_count PNG_DEPSTRUCT;
+   png_uint_16 offset_table_count_free PNG_DEPSTRUCT;
+#endif
+
+#ifdef PNG_READ_DITHER_SUPPORTED
+   png_bytep palette_lookup PNG_DEPSTRUCT;  
+   png_bytep dither_index PNG_DEPSTRUCT;                                   
+                                                      
+#endif
+
+#if defined(PNG_READ_DITHER_SUPPORTED) || defined(PNG_hIST_SUPPORTED)
+   png_uint_16p hist PNG_DEPSTRUCT;                 
+#endif
+
+#ifdef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED
+   png_byte heuristic_method PNG_DEPSTRUCT;                            
+                                                                         
+   png_byte num_prev_filters PNG_DEPSTRUCT;                            
+                                                                          
+   png_bytep prev_filters PNG_DEPSTRUCT;                               
+                                                                        
+   png_uint_16p filter_weights PNG_DEPSTRUCT;                               
+                                                                
+   png_uint_16p inv_filter_weights PNG_DEPSTRUCT;                    
+                                                                         
+   png_uint_16p filter_costs PNG_DEPSTRUCT;                          
+                                                                         
+   png_uint_16p inv_filter_costs PNG_DEPSTRUCT;                        
+                                                                         
+#endif
+
+#ifdef PNG_TIME_RFC1123_SUPPORTED
+   png_charp time_buffer PNG_DEPSTRUCT;  
+#endif
+
+ 
+
+   png_uint_32 free_me PNG_DEPSTRUCT;                            
+                                                                      
+
+#ifdef PNG_USER_CHUNKS_SUPPORTED
+   png_voidp user_chunk_ptr PNG_DEPSTRUCT;
+   png_user_chunk_ptr read_user_chunk_fn PNG_DEPSTRUCT;             
+                                                                           
+#endif
+
+#ifdef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
+   int num_chunk_list PNG_DEPSTRUCT;
+   png_bytep chunk_list PNG_DEPSTRUCT;
+#endif
+
+ 
+#ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
+   png_byte rgb_to_gray_status PNG_DEPSTRUCT;
+    
+   png_uint_16 rgb_to_gray_red_coeff PNG_DEPSTRUCT;
+   png_uint_16 rgb_to_gray_green_coeff PNG_DEPSTRUCT;
+   png_uint_16 rgb_to_gray_blue_coeff PNG_DEPSTRUCT;
+#endif
+
+ 
+#if defined(PNG_MNG_FEATURES_SUPPORTED) || \
+    defined(PNG_READ_EMPTY_PLTE_SUPPORTED) || \
+    defined(PNG_WRITE_EMPTY_PLTE_SUPPORTED)
+ 
+   png_uint_32 mng_features_permitted PNG_DEPSTRUCT;
+#endif
+
+ 
+#if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED)
+   png_fixed_point int_gamma PNG_DEPSTRUCT;
+#endif
+
+ 
+#ifdef PNG_MNG_FEATURES_SUPPORTED
+   png_byte filter_type PNG_DEPSTRUCT;
+#endif
+
+ 
+
+ 
+#ifdef PNG_USER_MEM_SUPPORTED
+   png_voidp mem_ptr PNG_DEPSTRUCT;                                        
+                                                                   
+   png_malloc_ptr malloc_fn PNG_DEPSTRUCT;                     
+                                                                       
+   png_free_ptr free_fn PNG_DEPSTRUCT;                         
+                                                                    
+#endif
+
+ 
+   png_bytep big_row_buf PNG_DEPSTRUCT;                                  
+                                                                      
+
+#ifdef PNG_READ_DITHER_SUPPORTED
+ 
+   png_bytep dither_sort PNG_DEPSTRUCT;             
+   png_bytep index_to_palette PNG_DEPSTRUCT;                            
+                                                                       
+                                                                      
+   png_bytep palette_to_index PNG_DEPSTRUCT;                              
+                                                                    
+                                                                      
+#endif
+
+ 
+   png_byte compression_type PNG_DEPSTRUCT;
+
+#ifdef PNG_USER_LIMITS_SUPPORTED
+   png_uint_32 user_width_max PNG_DEPSTRUCT;
+   png_uint_32 user_height_max PNG_DEPSTRUCT;
+                                                                    
+                                                    
+      
+   png_uint_32 user_chunk_cache_max PNG_DEPSTRUCT;
+#endif
+
+ 
+#ifdef PNG_UNKNOWN_CHUNKS_SUPPORTED
+    
+   png_unknown_chunk unknown_chunk PNG_DEPSTRUCT;
+#endif
+
+ 
+  png_uint_32 old_big_row_buf_size PNG_DEPSTRUCT;
+  png_uint_32 old_prev_row_size PNG_DEPSTRUCT;
+
+ 
+  png_charp chunkdata PNG_DEPSTRUCT;   
+
+#ifdef PNG_IO_STATE_SUPPORTED
+ 
+   png_uint_32 io_state PNG_DEPSTRUCT;
+#endif
+};
+
+
+                                                              
+                                        
+   
+typedef png_structp version_1_4_1;
+
+typedef png_struct FAR * FAR * png_structpp;
+
+                                                                     
+                                                                   
+                                                                       
+                                                             
+   
+
+ 
+extern PNG_EXPORT(png_uint_32,png_access_version_number) PNGARG((void));
+
+                                                                      
+                                                                         
+   
+extern PNG_EXPORT(void,png_set_sig_bytes) PNGARG((png_structp png_ptr,
+   int num_bytes));
+
+                                                                          
+                                                                     
+                                                                  
+                                                   
+   
+extern PNG_EXPORT(int,png_sig_cmp) PNGARG((png_bytep sig, png_size_t start,
+   png_size_t num_to_check));
+
+ 
+extern PNG_EXPORT(png_structp,png_create_read_struct)
+   PNGARG((png_const_charp user_png_ver, png_voidp error_ptr,
+   png_error_ptr error_fn, png_error_ptr warn_fn)) PNG_ALLOCATED;
+
+ 
+extern PNG_EXPORT(png_structp,png_create_write_struct)
+   PNGARG((png_const_charp user_png_ver, png_voidp error_ptr,
+   png_error_ptr error_fn, png_error_ptr warn_fn)) PNG_ALLOCATED;
+
+extern PNG_EXPORT(png_size_t,png_get_compression_buffer_size)
+   PNGARG((png_structp png_ptr));
+
+extern PNG_EXPORT(void,png_set_compression_buffer_size)
+   PNGARG((png_structp png_ptr, png_size_t size));
+
+                                                                      
+            
+   
+#ifdef PNG_SETJMP_SUPPORTED
+                                                                      
+                                                                         
+                                                                        
+                                                                          
+                                                                     
+                              
+   
+extern PNG_EXPORT(jmp_buf*, png_set_longjmp_fn)
+   PNGARG((png_structp png_ptr, png_longjmp_ptr longjmp_fn, size_t
+       jmp_buf_size));
+#  define png_jmpbuf(png_ptr) \
+   (*png_set_longjmp_fn((png_ptr), longjmp, sizeof (jmp_buf)))
+#else
+#  define png_jmpbuf(png_ptr) \
+   (LIBPNG_WAS_COMPILED_WITH__PNG_NO_SETJMP)
+#endif
+
+ 
+extern PNG_EXPORT(int,png_reset_zstream) PNGARG((png_structp png_ptr));
+
+ 
+#ifdef PNG_USER_MEM_SUPPORTED
+extern PNG_EXPORT(png_structp,png_create_read_struct_2)
+   PNGARG((png_const_charp user_png_ver, png_voidp error_ptr,
+   png_error_ptr error_fn, png_error_ptr warn_fn, png_voidp mem_ptr,
+   png_malloc_ptr malloc_fn, png_free_ptr free_fn)) PNG_ALLOCATED;
+extern PNG_EXPORT(png_structp,png_create_write_struct_2)
+   PNGARG((png_const_charp user_png_ver, png_voidp error_ptr,
+   png_error_ptr error_fn, png_error_ptr warn_fn, png_voidp mem_ptr,
+   png_malloc_ptr malloc_fn, png_free_ptr free_fn)) PNG_ALLOCATED;
+#endif
+
+ 
+extern PNG_EXPORT(void,png_write_sig) PNGARG((png_structp png_ptr));
+
+ 
+extern PNG_EXPORT(void,png_write_chunk) PNGARG((png_structp png_ptr,
+   png_bytep chunk_name, png_bytep data, png_size_t length));
+
+ 
+extern PNG_EXPORT(void,png_write_chunk_start) PNGARG((png_structp png_ptr,
+   png_bytep chunk_name, png_uint_32 length));
+
+ 
+extern PNG_EXPORT(void,png_write_chunk_data) PNGARG((png_structp png_ptr,
+   png_bytep data, png_size_t length));
+
+ 
+extern PNG_EXPORT(void,png_write_chunk_end) PNGARG((png_structp png_ptr));
+
+ 
+extern PNG_EXPORT(png_infop,png_create_info_struct)
+   PNGARG((png_structp png_ptr)) PNG_ALLOCATED;
+
+extern PNG_EXPORT(void,png_info_init_3) PNGARG((png_infopp info_ptr,
+    png_size_t png_info_struct_size));
+
+ 
+extern PNG_EXPORT(void,png_write_info_before_PLTE) PNGARG((png_structp png_ptr,
+   png_infop info_ptr));
+extern PNG_EXPORT(void,png_write_info) PNGARG((png_structp png_ptr,
+   png_infop info_ptr));
+
+#ifdef PNG_SEQUENTIAL_READ_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_read_info) PNGARG((png_structp png_ptr,
+   png_infop info_ptr));
+#endif
+
+#ifdef PNG_TIME_RFC1123_SUPPORTED
+extern PNG_EXPORT(png_charp,png_convert_to_rfc1123)
+   PNGARG((png_structp png_ptr, png_timep ptime));
+#endif
+
+#ifdef PNG_CONVERT_tIME_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_convert_from_struct_tm) PNGARG((png_timep ptime,
+   struct tm FAR * ttime));
+
+ 
+extern PNG_EXPORT(void,png_convert_from_time_t) PNGARG((png_timep ptime,
+   time_t ttime));
+#endif  
+
+#ifdef PNG_READ_EXPAND_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_set_expand) PNGARG((png_structp png_ptr));
+extern PNG_EXPORT(void,png_set_expand_gray_1_2_4_to_8) PNGARG((png_structp
+  png_ptr));
+extern PNG_EXPORT(void,png_set_palette_to_rgb) PNGARG((png_structp png_ptr));
+extern PNG_EXPORT(void,png_set_tRNS_to_alpha) PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_READ_BGR_SUPPORTED) || defined(PNG_WRITE_BGR_SUPPORTED)
+ 
+extern PNG_EXPORT(void,png_set_bgr) PNGARG((png_structp png_ptr));
+#endif
+
+#ifdef PNG_READ_GRAY_TO_RGB_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_set_gray_to_rgb) PNGARG((png_structp png_ptr));
+#endif
+
+#ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
+ 
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_rgb_to_gray) PNGARG((png_structp png_ptr,
+   int error_action, double red, double green ));
+#endif
+extern PNG_EXPORT(void,png_set_rgb_to_gray_fixed) PNGARG((png_structp png_ptr,
+   int error_action, png_fixed_point red, png_fixed_point green ));
+extern PNG_EXPORT(png_byte,png_get_rgb_to_gray_status) PNGARG((png_structp
+   png_ptr));
+#endif
+
+extern PNG_EXPORT(void,png_build_grayscale_palette) PNGARG((int bit_depth,
+   png_colorp palette));
+
+#ifdef PNG_READ_STRIP_ALPHA_SUPPORTED
+extern PNG_EXPORT(void,png_set_strip_alpha) PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_READ_SWAP_ALPHA_SUPPORTED) || \
+    defined(PNG_WRITE_SWAP_ALPHA_SUPPORTED)
+extern PNG_EXPORT(void,png_set_swap_alpha) PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_READ_INVERT_ALPHA_SUPPORTED) || \
+    defined(PNG_WRITE_INVERT_ALPHA_SUPPORTED)
+extern PNG_EXPORT(void,png_set_invert_alpha) PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_READ_FILLER_SUPPORTED) || defined(PNG_WRITE_FILLER_SUPPORTED)
+ 
+extern PNG_EXPORT(void,png_set_filler) PNGARG((png_structp png_ptr,
+   png_uint_32 filler, int flags));
+ 
+#define PNG_FILLER_BEFORE 0
+#define PNG_FILLER_AFTER 1
+ 
+extern PNG_EXPORT(void,png_set_add_alpha) PNGARG((png_structp png_ptr,
+   png_uint_32 filler, int flags));
+#endif  
+
+#if defined(PNG_READ_SWAP_SUPPORTED) || defined(PNG_WRITE_SWAP_SUPPORTED)
+ 
+extern PNG_EXPORT(void,png_set_swap) PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_READ_PACK_SUPPORTED) || defined(PNG_WRITE_PACK_SUPPORTED)
+ 
+extern PNG_EXPORT(void,png_set_packing) PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_READ_PACKSWAP_SUPPORTED) || \
+    defined(PNG_WRITE_PACKSWAP_SUPPORTED)
+ 
+extern PNG_EXPORT(void,png_set_packswap) PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_READ_SHIFT_SUPPORTED) || defined(PNG_WRITE_SHIFT_SUPPORTED)
+ 
+extern PNG_EXPORT(void,png_set_shift) PNGARG((png_structp png_ptr,
+   png_color_8p true_bits));
+#endif
+
+#if defined(PNG_READ_INTERLACING_SUPPORTED) || \
+    defined(PNG_WRITE_INTERLACING_SUPPORTED)
+ 
+extern PNG_EXPORT(int,png_set_interlace_handling) PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_READ_INVERT_SUPPORTED) || defined(PNG_WRITE_INVERT_SUPPORTED)
+ 
+extern PNG_EXPORT(void,png_set_invert_mono) PNGARG((png_structp png_ptr));
+#endif
+
+#ifdef PNG_READ_BACKGROUND_SUPPORTED
+ 
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_background) PNGARG((png_structp png_ptr,
+   png_color_16p background_color, int background_gamma_code,
+   int need_expand, double background_gamma));
+#endif
+#define PNG_BACKGROUND_GAMMA_UNKNOWN 0
+#define PNG_BACKGROUND_GAMMA_SCREEN  1
+#define PNG_BACKGROUND_GAMMA_FILE    2
+#define PNG_BACKGROUND_GAMMA_UNIQUE  3
+#endif
+
+#ifdef PNG_READ_16_TO_8_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_set_strip_16) PNGARG((png_structp png_ptr));
+#endif
+
+#ifdef PNG_READ_DITHER_SUPPORTED
+                                                                    
+             
+   
+extern PNG_EXPORT(void,png_set_dither) PNGARG((png_structp png_ptr,
+   png_colorp palette, int num_palette, int maximum_colors,
+   png_uint_16p histogram, int full_dither));
+#endif
+
+#ifdef PNG_READ_GAMMA_SUPPORTED
+ 
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_gamma) PNGARG((png_structp png_ptr,
+   double screen_gamma, double default_file_gamma));
+#endif
+#endif
+
+
+#ifdef PNG_WRITE_FLUSH_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_set_flush) PNGARG((png_structp png_ptr, int nrows));
+ 
+extern PNG_EXPORT(void,png_write_flush) PNGARG((png_structp png_ptr));
+#endif
+
+ 
+extern PNG_EXPORT(void,png_start_read_image) PNGARG((png_structp png_ptr));
+
+ 
+extern PNG_EXPORT(void,png_read_update_info) PNGARG((png_structp png_ptr,
+   png_infop info_ptr));
+
+#ifdef PNG_SEQUENTIAL_READ_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_read_rows) PNGARG((png_structp png_ptr,
+   png_bytepp row, png_bytepp display_row, png_uint_32 num_rows));
+#endif
+
+#ifdef PNG_SEQUENTIAL_READ_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_read_row) PNGARG((png_structp png_ptr,
+   png_bytep row,
+   png_bytep display_row));
+#endif
+
+#ifdef PNG_SEQUENTIAL_READ_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_read_image) PNGARG((png_structp png_ptr,
+   png_bytepp image));
+#endif
+
+ 
+extern PNG_EXPORT(void,png_write_row) PNGARG((png_structp png_ptr,
+   png_bytep row));
+
+ 
+extern PNG_EXPORT(void,png_write_rows) PNGARG((png_structp png_ptr,
+   png_bytepp row, png_uint_32 num_rows));
+
+ 
+extern PNG_EXPORT(void,png_write_image) PNGARG((png_structp png_ptr,
+   png_bytepp image));
+
+ 
+extern PNG_EXPORT(void,png_write_end) PNGARG((png_structp png_ptr,
+   png_infop info_ptr));
+
+#ifdef PNG_SEQUENTIAL_READ_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_read_end) PNGARG((png_structp png_ptr,
+   png_infop info_ptr));
+#endif
+
+ 
+extern PNG_EXPORT(void,png_destroy_info_struct) PNGARG((png_structp png_ptr,
+   png_infopp info_ptr_ptr));
+
+ 
+extern PNG_EXPORT(void,png_destroy_read_struct) PNGARG((png_structpp
+   png_ptr_ptr, png_infopp info_ptr_ptr, png_infopp end_info_ptr_ptr));
+
+ 
+extern PNG_EXPORT(void,png_destroy_write_struct)
+   PNGARG((png_structpp png_ptr_ptr, png_infopp info_ptr_ptr));
+
+ 
+extern PNG_EXPORT(void,png_set_crc_action) PNGARG((png_structp png_ptr,
+   int crit_action, int ancil_action));
+
+                                                                     
+                                                                       
+                                                                       
+                                                                        
+                                                                            
+                                                               
+  
+                                                                        
+   
+#define PNG_CRC_DEFAULT       0   
+#define PNG_CRC_ERROR_QUIT    1   
+#define PNG_CRC_WARN_DISCARD  2   
+#define PNG_CRC_WARN_USE      3   
+#define PNG_CRC_QUIET_USE     4   
+#define PNG_CRC_NO_CHANGE     5   
+
+                                                                        
+                                                                        
+                                                                          
+                                                                        
+                                                                       
+                                                                        
+   
+
+                                                                         
+                           
+   
+extern PNG_EXPORT(void,png_set_filter) PNGARG((png_structp png_ptr, int method,
+   int filters));
+
+                                                                     
+                                                                
+                                                                      
+                                      
+   
+#define PNG_NO_FILTERS     0x00
+#define PNG_FILTER_NONE    0x08
+#define PNG_FILTER_SUB     0x10
+#define PNG_FILTER_UP      0x20
+#define PNG_FILTER_AVG     0x40
+#define PNG_FILTER_PAETH   0x80
+#define PNG_ALL_FILTERS (PNG_FILTER_NONE | PNG_FILTER_SUB | PNG_FILTER_UP | \
+                         PNG_FILTER_AVG | PNG_FILTER_PAETH)
+
+                                                                      
+                                       
+   
+#define PNG_FILTER_VALUE_NONE  0
+#define PNG_FILTER_VALUE_SUB   1
+#define PNG_FILTER_VALUE_UP    2
+#define PNG_FILTER_VALUE_AVG   3
+#define PNG_FILTER_VALUE_PAETH 4
+#define PNG_FILTER_VALUE_LAST  5
+
+#ifdef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED  
+                                                                      
+                                                                        
+                                                                          
+  
+                                                                         
+                                                                        
+                                                                          
+                                                                             
+                                                                           
+                                                                            
+                                                                              
+                                             
+  
+                                                                       
+                                                                     
+                                                                              
+                                                                            
+                                                                         
+                                                                              
+                                               
+  
+                                                                           
+                                                                            
+                                                                           
+                                                                          
+                                                                             
+                                                                      
+   
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_filter_heuristics) PNGARG((png_structp png_ptr,
+   int heuristic_method, int num_weights, png_doublep filter_weights,
+   png_doublep filter_costs));
+#endif
+#endif  
+
+                                                                        
+           
+   
+#define PNG_FILTER_HEURISTIC_DEFAULT    0   
+#define PNG_FILTER_HEURISTIC_UNWEIGHTED 1   
+#define PNG_FILTER_HEURISTIC_WEIGHTED   2   
+#define PNG_FILTER_HEURISTIC_LAST       3   
+
+                                                                         
+                                                                     
+                                                                         
+                                                                            
+                                                                          
+                                                                           
+   
+extern PNG_EXPORT(void,png_set_compression_level) PNGARG((png_structp png_ptr,
+   int level));
+
+extern PNG_EXPORT(void,png_set_compression_mem_level)
+   PNGARG((png_structp png_ptr, int mem_level));
+
+extern PNG_EXPORT(void,png_set_compression_strategy)
+   PNGARG((png_structp png_ptr, int strategy));
+
+extern PNG_EXPORT(void,png_set_compression_window_bits)
+   PNGARG((png_structp png_ptr, int window_bits));
+
+extern PNG_EXPORT(void,png_set_compression_method) PNGARG((png_structp png_ptr,
+   int method));
+
+                                                                      
+                                                                      
+                                                                  
+                                                                    
+                                                                  
+                                                                    
+                    
+   
+
+#ifdef PNG_STDIO_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_init_io) PNGARG((png_structp png_ptr,
+    png_FILE_p fp));
+#endif
+
+                                                                 
+                                                                       
+                                                                       
+                                                                       
+                                                                    
+                                 
+   
+
+extern PNG_EXPORT(void,png_set_error_fn) PNGARG((png_structp png_ptr,
+   png_voidp error_ptr, png_error_ptr error_fn, png_error_ptr warning_fn));
+
+ 
+extern PNG_EXPORT(png_voidp,png_get_error_ptr) PNGARG((png_structp png_ptr));
+
+                                                                         
+                                                                           
+                                                                     
+                                                          
+                                                              
+                                                                   
+                                                                     
+                                                                        
+           
+   
+extern PNG_EXPORT(void,png_set_write_fn) PNGARG((png_structp png_ptr,
+   png_voidp io_ptr, png_rw_ptr write_data_fn, png_flush_ptr output_flush_fn));
+
+ 
+extern PNG_EXPORT(void,png_set_read_fn) PNGARG((png_structp png_ptr,
+   png_voidp io_ptr, png_rw_ptr read_data_fn));
+
+ 
+extern PNG_EXPORT(png_voidp,png_get_io_ptr) PNGARG((png_structp png_ptr));
+
+extern PNG_EXPORT(void,png_set_read_status_fn) PNGARG((png_structp png_ptr,
+   png_read_status_ptr read_row_fn));
+
+extern PNG_EXPORT(void,png_set_write_status_fn) PNGARG((png_structp png_ptr,
+   png_write_status_ptr write_row_fn));
+
+#ifdef PNG_USER_MEM_SUPPORTED
+ 
+extern PNG_EXPORT(void,png_set_mem_fn) PNGARG((png_structp png_ptr,
+   png_voidp mem_ptr, png_malloc_ptr malloc_fn, png_free_ptr free_fn));
+ 
+extern PNG_EXPORT(png_voidp,png_get_mem_ptr) PNGARG((png_structp png_ptr));
+#endif
+
+#ifdef PNG_READ_USER_TRANSFORM_SUPPORTED
+extern PNG_EXPORT(void,png_set_read_user_transform_fn) PNGARG((png_structp
+   png_ptr, png_user_transform_ptr read_user_transform_fn));
+#endif
+
+#ifdef PNG_WRITE_USER_TRANSFORM_SUPPORTED
+extern PNG_EXPORT(void,png_set_write_user_transform_fn) PNGARG((png_structp
+   png_ptr, png_user_transform_ptr write_user_transform_fn));
+#endif
+
+#if defined(PNG_READ_USER_TRANSFORM_SUPPORTED) || \
+    defined(PNG_WRITE_USER_TRANSFORM_SUPPORTED)
+extern PNG_EXPORT(void,png_set_user_transform_info) PNGARG((png_structp
+   png_ptr, png_voidp user_transform_ptr, int user_transform_depth,
+   int user_transform_channels));
+ 
+extern PNG_EXPORT(png_voidp,png_get_user_transform_ptr)
+   PNGARG((png_structp png_ptr));
+#endif
+
+#ifdef PNG_USER_CHUNKS_SUPPORTED
+extern PNG_EXPORT(void,png_set_read_user_chunk_fn) PNGARG((png_structp png_ptr,
+   png_voidp user_chunk_ptr, png_user_chunk_ptr read_user_chunk_fn));
+extern PNG_EXPORT(png_voidp,png_get_user_chunk_ptr) PNGARG((png_structp
+   png_ptr));
+#endif
+
+#ifdef PNG_PROGRESSIVE_READ_SUPPORTED
+                                                                      
+                                                              
+   
+extern PNG_EXPORT(void,png_set_progressive_read_fn) PNGARG((png_structp png_ptr,
+   png_voidp progressive_ptr,
+   png_progressive_info_ptr info_fn, png_progressive_row_ptr row_fn,
+   png_progressive_end_ptr end_fn));
+
+ 
+extern PNG_EXPORT(png_voidp,png_get_progressive_ptr)
+   PNGARG((png_structp png_ptr));
+
+ 
+extern PNG_EXPORT(void,png_process_data) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_bytep buffer, png_size_t buffer_size));
+
+                                                                 
+                                                  
+   
+extern PNG_EXPORT(void,png_progressive_combine_row) PNGARG((png_structp png_ptr,
+   png_bytep old_row, png_bytep new_row));
+#endif  
+
+extern PNG_EXPORT(png_voidp,png_malloc) PNGARG((png_structp png_ptr,
+   png_alloc_size_t size)) PNG_ALLOCATED;
+ 
+extern PNG_EXPORT(png_voidp,png_calloc) PNGARG((png_structp png_ptr,
+   png_alloc_size_t size)) PNG_ALLOCATED;
+
+ 
+extern PNG_EXPORT(png_voidp,png_malloc_warn) PNGARG((png_structp png_ptr,
+   png_alloc_size_t size)) PNG_ALLOCATED;
+
+ 
+extern PNG_EXPORT(void,png_free) PNGARG((png_structp png_ptr, png_voidp ptr));
+
+ 
+extern PNG_EXPORT(void,png_free_data) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_uint_32 free_me, int num));
+                                                                       
+                                     
+extern PNG_EXPORT(void,png_data_freer) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int freer, png_uint_32 mask));
+ 
+#define PNG_DESTROY_WILL_FREE_DATA 1
+#define PNG_SET_WILL_FREE_DATA 1
+#define PNG_USER_WILL_FREE_DATA 2
+ 
+#define PNG_FREE_HIST 0x0008
+#define PNG_FREE_ICCP 0x0010
+#define PNG_FREE_SPLT 0x0020
+#define PNG_FREE_ROWS 0x0040
+#define PNG_FREE_PCAL 0x0080
+#define PNG_FREE_SCAL 0x0100
+#define PNG_FREE_UNKN 0x0200
+#define PNG_FREE_LIST 0x0400
+#define PNG_FREE_PLTE 0x1000
+#define PNG_FREE_TRNS 0x2000
+#define PNG_FREE_TEXT 0x4000
+#define PNG_FREE_ALL  0x7fff
+#define PNG_FREE_MUL  0x4220  
+
+#ifdef PNG_USER_MEM_SUPPORTED
+extern PNG_EXPORT(png_voidp,png_malloc_default) PNGARG((png_structp png_ptr,
+   png_alloc_size_t size)) PNG_ALLOCATED;
+extern PNG_EXPORT(void,png_free_default) PNGARG((png_structp png_ptr,
+   png_voidp ptr));
+#endif
+
+#ifndef PNG_NO_ERROR_TEXT
+ 
+extern PNG_EXPORT(void,png_error) PNGARG((png_structp png_ptr,
+   png_const_charp error_message)) PNG_NORETURN;
+
+ 
+extern PNG_EXPORT(void,png_chunk_error) PNGARG((png_structp png_ptr,
+   png_const_charp error_message)) PNG_NORETURN;
+
+#else
+ 
+extern PNG_EXPORT(void,png_err) PNGARG((png_structp png_ptr)) PNG_NORETURN;
+#endif
+
+ 
+extern PNG_EXPORT(void,png_warning) PNGARG((png_structp png_ptr,
+   png_const_charp warning_message));
+
+ 
+extern PNG_EXPORT(void,png_chunk_warning) PNGARG((png_structp png_ptr,
+   png_const_charp warning_message));
+
+#ifdef PNG_BENIGN_ERRORS_SUPPORTED
+                                                                 
+                                                                         
+extern PNG_EXPORT(void,png_benign_error) PNGARG((png_structp png_ptr,
+   png_const_charp warning_message));
+
+ 
+extern PNG_EXPORT(void,png_chunk_benign_error) PNGARG((png_structp png_ptr,
+   png_const_charp warning_message));
+
+extern PNG_EXPORT(void,png_set_benign_errors) PNGARG((png_structp
+   png_ptr, int allowed));
+#endif
+
+                                                                               
+                                                                        
+                                                                             
+                                                                           
+                                                                              
+                                                                             
+                          
+  
+                                                                        
+                                                                           
+                   
+   
+ 
+extern PNG_EXPORT(png_uint_32,png_get_valid) PNGARG((png_structp png_ptr,
+png_infop info_ptr, png_uint_32 flag));
+
+ 
+extern PNG_EXPORT(png_size_t,png_get_rowbytes) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+
+#ifdef PNG_INFO_IMAGE_SUPPORTED
+                                                                            
+                                
+   
+extern PNG_EXPORT(png_bytepp,png_get_rows) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+                                                                       
+                      
+   
+extern PNG_EXPORT(void,png_set_rows) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_bytepp row_pointers));
+#endif
+
+ 
+extern PNG_EXPORT(png_byte,png_get_channels) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+
+#ifdef PNG_EASY_ACCESS_SUPPORTED
+ 
+extern PNG_EXPORT(png_uint_32, png_get_image_width) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+ 
+extern PNG_EXPORT(png_uint_32, png_get_image_height) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+ 
+extern PNG_EXPORT(png_byte, png_get_bit_depth) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+ 
+extern PNG_EXPORT(png_byte, png_get_color_type) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+ 
+extern PNG_EXPORT(png_byte, png_get_filter_type) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+ 
+extern PNG_EXPORT(png_byte, png_get_interlace_type) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+ 
+extern PNG_EXPORT(png_byte, png_get_compression_type) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+ 
+extern PNG_EXPORT(png_uint_32, png_get_pixels_per_meter) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+extern PNG_EXPORT(png_uint_32, png_get_x_pixels_per_meter) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+extern PNG_EXPORT(png_uint_32, png_get_y_pixels_per_meter) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+ 
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(float, png_get_pixel_aspect_ratio) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+#endif
+
+ 
+extern PNG_EXPORT(png_int_32, png_get_x_offset_pixels) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+extern PNG_EXPORT(png_int_32, png_get_y_offset_pixels) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+extern PNG_EXPORT(png_int_32, png_get_x_offset_microns) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+extern PNG_EXPORT(png_int_32, png_get_y_offset_microns) PNGARG((png_structp
+png_ptr, png_infop info_ptr));
+
+#endif  
+
+ 
+extern PNG_EXPORT(png_bytep,png_get_signature) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+
+#ifdef PNG_bKGD_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_bKGD) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_color_16p *background));
+#endif
+
+#ifdef PNG_bKGD_SUPPORTED
+extern PNG_EXPORT(void,png_set_bKGD) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_color_16p background));
+#endif
+
+#ifdef PNG_cHRM_SUPPORTED
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_cHRM) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, double *white_x, double *white_y, double *red_x,
+   double *red_y, double *green_x, double *green_y, double *blue_x,
+   double *blue_y));
+#endif
+#ifdef PNG_FIXED_POINT_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_cHRM_fixed) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_fixed_point *int_white_x, png_fixed_point
+   *int_white_y, png_fixed_point *int_red_x, png_fixed_point *int_red_y,
+   png_fixed_point *int_green_x, png_fixed_point *int_green_y, png_fixed_point
+   *int_blue_x, png_fixed_point *int_blue_y));
+#endif
+#endif
+
+#ifdef PNG_cHRM_SUPPORTED
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_cHRM) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, double white_x, double white_y, double red_x,
+   double red_y, double green_x, double green_y, double blue_x, double blue_y));
+#endif
+#ifdef PNG_FIXED_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_cHRM_fixed) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_fixed_point int_white_x, png_fixed_point int_white_y,
+   png_fixed_point int_red_x, png_fixed_point int_red_y, png_fixed_point
+   int_green_x, png_fixed_point int_green_y, png_fixed_point int_blue_x,
+   png_fixed_point int_blue_y));
+#endif
+#endif
+
+#ifdef PNG_gAMA_SUPPORTED
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_gAMA) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, double *file_gamma));
+#endif
+extern PNG_EXPORT(png_uint_32,png_get_gAMA_fixed) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_fixed_point *int_file_gamma));
+#endif
+
+#ifdef PNG_gAMA_SUPPORTED
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_gAMA) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, double file_gamma));
+#endif
+extern PNG_EXPORT(void,png_set_gAMA_fixed) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_fixed_point int_file_gamma));
+#endif
+
+#ifdef PNG_hIST_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_hIST) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_uint_16p *hist));
+#endif
+
+#ifdef PNG_hIST_SUPPORTED
+extern PNG_EXPORT(void,png_set_hIST) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_uint_16p hist));
+#endif
+
+extern PNG_EXPORT(png_uint_32,png_get_IHDR) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_uint_32 *width, png_uint_32 *height,
+   int *bit_depth, int *color_type, int *interlace_method,
+   int *compression_method, int *filter_method));
+
+extern PNG_EXPORT(void,png_set_IHDR) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_uint_32 width, png_uint_32 height, int bit_depth,
+   int color_type, int interlace_method, int compression_method,
+   int filter_method));
+
+#ifdef PNG_oFFs_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_oFFs) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_int_32 *offset_x, png_int_32 *offset_y,
+   int *unit_type));
+#endif
+
+#ifdef PNG_oFFs_SUPPORTED
+extern PNG_EXPORT(void,png_set_oFFs) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_int_32 offset_x, png_int_32 offset_y,
+   int unit_type));
+#endif
+
+#ifdef PNG_pCAL_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_pCAL) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_charp *purpose, png_int_32 *X0, png_int_32 *X1,
+   int *type, int *nparams, png_charp *units, png_charpp *params));
+#endif
+
+#ifdef PNG_pCAL_SUPPORTED
+extern PNG_EXPORT(void,png_set_pCAL) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_charp purpose, png_int_32 X0, png_int_32 X1,
+   int type, int nparams, png_charp units, png_charpp params));
+#endif
+
+#ifdef PNG_pHYs_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_pHYs) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_uint_32 *res_x, png_uint_32 *res_y, int *unit_type));
+#endif
+
+#ifdef PNG_pHYs_SUPPORTED
+extern PNG_EXPORT(void,png_set_pHYs) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_uint_32 res_x, png_uint_32 res_y, int unit_type));
+#endif
+
+extern PNG_EXPORT(png_uint_32,png_get_PLTE) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_colorp *palette, int *num_palette));
+
+extern PNG_EXPORT(void,png_set_PLTE) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_colorp palette, int num_palette));
+
+#ifdef PNG_sBIT_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_sBIT) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_color_8p *sig_bit));
+#endif
+
+#ifdef PNG_sBIT_SUPPORTED
+extern PNG_EXPORT(void,png_set_sBIT) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_color_8p sig_bit));
+#endif
+
+#ifdef PNG_sRGB_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_sRGB) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int *intent));
+#endif
+
+#ifdef PNG_sRGB_SUPPORTED
+extern PNG_EXPORT(void,png_set_sRGB) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int intent));
+extern PNG_EXPORT(void,png_set_sRGB_gAMA_and_cHRM) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int intent));
+#endif
+
+#ifdef PNG_iCCP_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_iCCP) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_charpp name, int *compression_type,
+   png_charpp profile, png_uint_32 *proflen));
+    
+#endif
+
+#ifdef PNG_iCCP_SUPPORTED
+extern PNG_EXPORT(void,png_set_iCCP) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_charp name, int compression_type,
+   png_charp profile, png_uint_32 proflen));
+    
+#endif
+
+#ifdef PNG_sPLT_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_sPLT) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_sPLT_tpp entries));
+#endif
+
+#ifdef PNG_sPLT_SUPPORTED
+extern PNG_EXPORT(void,png_set_sPLT) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_sPLT_tp entries, int nentries));
+#endif
+
+#ifdef PNG_TEXT_SUPPORTED
+ 
+extern PNG_EXPORT(png_uint_32,png_get_text) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_textp *text_ptr, int *num_text));
+#endif
+
+                                                                
+                                                                      
+                                                       
+                                                              
+                                    
+   
+
+#ifdef PNG_TEXT_SUPPORTED
+extern PNG_EXPORT(void,png_set_text) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_textp text_ptr, int num_text));
+#endif
+
+#ifdef PNG_tIME_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_tIME) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_timep *mod_time));
+#endif
+
+#ifdef PNG_tIME_SUPPORTED
+extern PNG_EXPORT(void,png_set_tIME) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_timep mod_time));
+#endif
+
+#ifdef PNG_tRNS_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_tRNS) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_bytep *trans_alpha, int *num_trans,
+   png_color_16p *trans_color));
+#endif
+
+#ifdef PNG_tRNS_SUPPORTED
+extern PNG_EXPORT(void,png_set_tRNS) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_bytep trans_alpha, int num_trans,
+   png_color_16p trans_color));
+#endif
+
+#ifdef PNG_tRNS_SUPPORTED
+#endif
+
+#ifdef PNG_sCAL_SUPPORTED
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_sCAL) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int *unit, double *width, double *height));
+#else
+#ifdef PNG_FIXED_POINT_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_sCAL_s) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int *unit, png_charpp swidth, png_charpp sheight));
+#endif
+#endif
+#endif  
+
+#ifdef PNG_sCAL_SUPPORTED
+#ifdef PNG_FLOATING_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_sCAL) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int unit, double width, double height));
+#else
+#ifdef PNG_FIXED_POINT_SUPPORTED
+extern PNG_EXPORT(void,png_set_sCAL_s) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int unit, png_charp swidth, png_charp sheight));
+#endif
+#endif
+#endif  
+
+#ifdef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
+                                                                           
+                                                                             
+                                                                          
+                      
+                                        
+                           
+                                         
+                                           
+  
+extern PNG_EXPORT(void, png_set_keep_unknown_chunks) PNGARG((png_structp
+   png_ptr, int keep, png_bytep chunk_list, int num_chunks));
+PNG_EXPORT(int,png_handle_as_unknown) PNGARG((png_structp png_ptr, png_bytep
+   chunk_name));
+#endif
+#ifdef PNG_UNKNOWN_CHUNKS_SUPPORTED
+extern PNG_EXPORT(void, png_set_unknown_chunks) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, png_unknown_chunkp unknowns, int num_unknowns));
+extern PNG_EXPORT(void, png_set_unknown_chunk_location)
+   PNGARG((png_structp png_ptr, png_infop info_ptr, int chunk, int location));
+extern PNG_EXPORT(png_uint_32,png_get_unknown_chunks) PNGARG((png_structp
+   png_ptr, png_infop info_ptr, png_unknown_chunkpp entries));
+#endif
+
+                                                                        
+                                                                          
+                                                                 
+   
+extern PNG_EXPORT(void, png_set_invalid) PNGARG((png_structp png_ptr,
+   png_infop info_ptr, int mask));
+
+#ifdef PNG_INFO_IMAGE_SUPPORTED
+ 
+extern PNG_EXPORT(void, png_read_png) PNGARG((png_structp png_ptr,
+                        png_infop info_ptr,
+                        int transforms,
+                        png_voidp params));
+extern PNG_EXPORT(void, png_write_png) PNGARG((png_structp png_ptr,
+                        png_infop info_ptr,
+                        int transforms,
+                        png_voidp params));
+#endif
+
+extern PNG_EXPORT(png_charp,png_get_copyright) PNGARG((png_structp png_ptr));
+extern PNG_EXPORT(png_charp,png_get_header_ver) PNGARG((png_structp png_ptr));
+extern PNG_EXPORT(png_charp,png_get_header_version) PNGARG((png_structp
+    png_ptr));
+extern PNG_EXPORT(png_charp,png_get_libpng_ver) PNGARG((png_structp png_ptr));
+
+#ifdef PNG_MNG_FEATURES_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_permit_mng_features) PNGARG((png_structp
+   png_ptr, png_uint_32 mng_features_permitted));
+#endif
+
+ 
+#define PNG_HANDLE_CHUNK_AS_DEFAULT   0
+#define PNG_HANDLE_CHUNK_NEVER        1
+#define PNG_HANDLE_CHUNK_IF_SAFE      2
+#define PNG_HANDLE_CHUNK_ALWAYS       3
+
+                                                                     
+                                                                
+   
+#ifdef PNG_ERROR_NUMBERS_SUPPORTED
+extern PNG_EXPORT(void,png_set_strip_error_numbers) PNGARG((png_structp
+   png_ptr, png_uint_32 strip_mode));
+#endif
+
+ 
+#ifdef PNG_SET_USER_LIMITS_SUPPORTED
+extern PNG_EXPORT(void,png_set_user_limits) PNGARG((png_structp
+   png_ptr, png_uint_32 user_width_max, png_uint_32 user_height_max));
+extern PNG_EXPORT(png_uint_32,png_get_user_width_max) PNGARG((png_structp
+   png_ptr));
+extern PNG_EXPORT(png_uint_32,png_get_user_height_max) PNGARG((png_structp
+   png_ptr));
+ 
+extern PNG_EXPORT(void,png_set_chunk_cache_max) PNGARG((png_structp
+   png_ptr, png_uint_32 user_chunk_cache_max));
+extern PNG_EXPORT(png_uint_32,png_get_chunk_cache_max)
+   PNGARG((png_structp png_ptr));
+ 
+extern PNG_EXPORT(void,png_set_chunk_malloc_max) PNGARG((png_structp
+   png_ptr, png_alloc_size_t user_chunk_cache_max));
+extern PNG_EXPORT(png_alloc_size_t,png_get_chunk_malloc_max)
+   PNGARG((png_structp png_ptr));
+#endif
+
+#if defined(PNG_INCH_CONVERSIONS) && defined(PNG_FLOATING_POINT_SUPPORTED)
+PNG_EXPORT(png_uint_32,png_get_pixels_per_inch) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+
+PNG_EXPORT(png_uint_32,png_get_x_pixels_per_inch) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+
+PNG_EXPORT(png_uint_32,png_get_y_pixels_per_inch) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+
+PNG_EXPORT(float,png_get_x_offset_inches) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+
+PNG_EXPORT(float,png_get_y_offset_inches) PNGARG((png_structp png_ptr,
+png_infop info_ptr));
+
+#ifdef PNG_pHYs_SUPPORTED
+PNG_EXPORT(png_uint_32,png_get_pHYs_dpi) PNGARG((png_structp png_ptr,
+png_infop info_ptr, png_uint_32 *res_x, png_uint_32 *res_y, int *unit_type));
+#endif  
+#endif   
+
+ 
+#ifdef PNG_IO_STATE_SUPPORTED
+extern PNG_EXPORT(png_uint_32,png_get_io_state) PNGARG((png_structp png_ptr));
+
+extern PNG_EXPORT(png_bytep,png_get_io_chunk_name)
+   PNGARG((png_structp png_ptr));
+
+ 
+#define PNG_IO_NONE        0x0000    
+#define PNG_IO_READING     0x0001    
+#define PNG_IO_WRITING     0x0002    
+#define PNG_IO_SIGNATURE   0x0010    
+#define PNG_IO_CHUNK_HDR   0x0020    
+#define PNG_IO_CHUNK_DATA  0x0040    
+#define PNG_IO_CHUNK_CRC   0x0080    
+#define PNG_IO_MASK_OP     0x000f    
+#define PNG_IO_MASK_LOC    0x00f0    
+#endif  
+
+                                                                         
+       
+   
+
+#ifdef PNG_READ_COMPOSITE_NODIV_SUPPORTED
+                                                                          
+                                                                               
+                                                                           
+                                                                            
+  
+                                                                           
+                                                                          
+                   
+  
+                                                                            
+   
+
+  
+
+#  define png_composite(composite, fg, alpha, bg)         \
+     { png_uint_16 temp = (png_uint_16)((png_uint_16)(fg) \
+           * (png_uint_16)(alpha)                         \
+           + (png_uint_16)(bg)*(png_uint_16)(255          \
+           - (png_uint_16)(alpha)) + (png_uint_16)128);   \
+       (composite) = (png_byte)((temp + (temp >> 8)) >> 8); }
+
+#  define png_composite_16(composite, fg, alpha, bg)       \
+     { png_uint_32 temp = (png_uint_32)((png_uint_32)(fg)  \
+           * (png_uint_32)(alpha)                          \
+           + (png_uint_32)(bg)*(png_uint_32)(65535L        \
+           - (png_uint_32)(alpha)) + (png_uint_32)32768L); \
+       (composite) = (png_uint_16)((temp + (temp >> 16)) >> 16); }
+
+#else   
+
+#  define png_composite(composite, fg, alpha, bg)                            \
+     (composite) = (png_byte)(((png_uint_16)(fg) * (png_uint_16)(alpha) +    \
+       (png_uint_16)(bg) * (png_uint_16)(255 - (png_uint_16)(alpha)) +       \
+       (png_uint_16)127) / 255)
+
+#  define png_composite_16(composite, fg, alpha, bg)                         \
+     (composite) = (png_uint_16)(((png_uint_32)(fg) * (png_uint_32)(alpha) + \
+       (png_uint_32)(bg)*(png_uint_32)(65535L - (png_uint_32)(alpha)) +      \
+       (png_uint_32)32767) / (png_uint_32)65535L)
+#endif  
+
+#ifdef PNG_USE_READ_MACROS
+                                                                   
+                                                                     
+                                                              
+   
+ 
+#  define png_get_uint_32(buf) \
+     (((png_uint_32)(*(buf)) << 24) + \
+      ((png_uint_32)(*((buf) + 1)) << 16) + \
+      ((png_uint_32)(*((buf) + 2)) << 8) + \
+      ((png_uint_32)(*((buf) + 3))))
+#  define png_get_uint_16(buf) \
+     (((png_uint_32)(*(buf)) << 8) + \
+      ((png_uint_32)(*((buf) + 1))))
+#ifdef PNG_GET_INT_32_SUPPORTED
+#  define png_get_int_32(buf) \
+     (((png_int_32)(*(buf)) << 24) + \
+      ((png_int_32)(*((buf) + 1)) << 16) + \
+      ((png_int_32)(*((buf) + 2)) << 8) + \
+      ((png_int_32)(*((buf) + 3))))
+#endif
+#else
+extern PNG_EXPORT(png_uint_32,png_get_uint_32) PNGARG((png_bytep buf));
+extern PNG_EXPORT(png_uint_16,png_get_uint_16) PNGARG((png_bytep buf));
+#ifdef PNG_GET_INT_32_SUPPORTED
+extern PNG_EXPORT(png_int_32,png_get_int_32) PNGARG((png_bytep buf));
+#endif
+#endif
+extern PNG_EXPORT(png_uint_32,png_get_uint_31)
+  PNGARG((png_structp png_ptr, png_bytep buf));
+ 
+
+ 
+extern PNG_EXPORT(void,png_save_uint_32)
+   PNGARG((png_bytep buf, png_uint_32 i));
+extern PNG_EXPORT(void,png_save_int_32)
+   PNGARG((png_bytep buf, png_int_32 i));
+
+                                                         
+                                                           
+                                                            
+   
+extern PNG_EXPORT(void,png_save_uint_16)
+   PNGARG((png_bytep buf, unsigned int i));
+ 
+
+ 
+
+                                                                       
+                                                    
+   
+#define PNG_HAVE_IHDR               0x01
+#define PNG_HAVE_PLTE               0x02
+#define PNG_HAVE_IDAT               0x04
+#define PNG_AFTER_IDAT              0x08  
+#define PNG_HAVE_IEND               0x10
+#define PNG_HAVE_gAMA               0x20
+#define PNG_HAVE_cHRM               0x40
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  
+ 
+#endif  
