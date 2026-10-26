@@ -6,8 +6,8 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-
-
+/// \file  ndk_strings.h
+/// \brief Android string functions
 
 #include <stdarg.h>
 #include <stdio.h>

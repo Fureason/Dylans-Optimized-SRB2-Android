@@ -1,6 +1,6 @@
+// Multi-channel effects buffer with panning, echo and reverb
 
-
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 #ifndef EFFECTS_BUFFER_H
 #define EFFECTS_BUFFER_H
 
@@ -8,37 +8,37 @@
 
 #include <vector>
 
-
+// Effects_Buffer uses several buffers and outputs stereo sample pairs.
 class Effects_Buffer : public Multi_Buffer {
 public:
-
-
-
-
+	// nVoices indicates the number of voices for which buffers will be allocated
+	// to make Effects_Buffer work as "mix everything to one", nVoices will be 1
+	// If center_only is true, only center buffers are created and
+	// less memory is used.
 	Effects_Buffer( int nVoices = 1, bool center_only = false );
 	
-
-
-
-
-
-
-
+	// Channel  Effect    Center Pan
+	// ---------------------------------
+	//    0,5    reverb       pan_1
+	//    1,6    reverb       pan_2
+	//    2,7    echo         -
+	//    3      echo         -
+	//    4      echo         -
 	
-
+	// Channel configuration
 	struct config_t {
-		double pan_1;            
+		double pan_1;           // -1.0 = left, 0.0 = center, 1.0 = right
 		double pan_2;
-		double echo_delay;       
-		double echo_level;       
-		double reverb_delay;     
-		double delay_variance;   
-		double reverb_level;     
-		bool effects_enabled;    
+		double echo_delay;      // msec
+		double echo_level;      // 0.0 to 1.0
+		double reverb_delay;    // msec
+		double delay_variance;  // difference between left/right delays (msec)
+		double reverb_level;    // 0.0 to 1.0
+		bool effects_enabled;   // if false, use optimized simple mixer
 		config_t();
 	};
 	
-
+	// Set configuration of buffer
 	virtual void config( const config_t& );
 	void set_depth( double );
 	

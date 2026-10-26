@@ -1,4 +1,4 @@
-
+# game-music-emu shared library
 
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
@@ -8,9 +8,9 @@ LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)
 LOCAL_CFLAGS := -DLIBGME_VISIBILITY -DVGM_YM2612_GENS -DGME_SPC_ISOLATED_ECHO_BUFFER -DHAVE_ZLIB_H
 LOCAL_CPPFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden -Wno-inconsistent-missing-override
 
-
-
-
+ # Try to protect against undefined behavior from signed integer overflow
+    # This has caused miscompilation of code already and there are other
+    # potential uses; see https://bitbucket.org/mpyne/game-music-emu/issues/18/
 
 LOCAL_CPPFLAGS += -fwrapv
 LOCAL_CPP_FEATURES += exceptions

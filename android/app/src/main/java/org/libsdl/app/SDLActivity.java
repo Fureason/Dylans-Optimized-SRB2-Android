@@ -58,17 +58,17 @@ import java.util.Hashtable;
 import java.util.Locale;
 
 
-   
-                
-  
+/**
+    SDL Activity
+*/
 public class SDLActivity extends Activity implements View.OnSystemUiVisibilityChangeListener {
     private static final String TAG = "SDL";
 
     public static boolean mIsResumedCalled, mHasFocus;
     public static final boolean mHasMultiWindow = (Build.VERSION.SDK_INT >= 24);
 
-
-
+    // Cursor types
+    // private static final int SDL_SYSTEM_CURSOR_NONE = -1;
     private static final int SDL_SYSTEM_CURSOR_ARROW = 0;
     private static final int SDL_SYSTEM_CURSOR_IBEAM = 1;
     private static final int SDL_SYSTEM_CURSOR_WAIT = 2;
@@ -91,7 +91,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     protected static int mCurrentOrientation;
     protected static Locale mCurrentLocale;
 
-
+    // Handle the state of the native layer
     public enum NativeState {
            INIT, RESUMED, PAUSED
     }
@@ -99,10 +99,10 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     public static NativeState mNextNativeState;
     public static NativeState mCurrentNativeState;
 
-     
+    /** If shared libraries (e.g. SDL or the native application) could not be loaded. */
     public static boolean mBrokenLibraries = true;
 
-
+    // Main components
     protected static SDLActivity mSingleton;
     protected static SDLSurface mSurface;
     protected static View mTextEdit;
@@ -114,7 +114,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     protected static SDLGenericMotionListener_API12 mMotionListener;
     protected static HIDDeviceManager mHIDDeviceManager;
 
-
+    // This is what SDL runs in. It invokes SDL_main(), eventually
     protected static Thread mSDLThread;
 
     protected static SDLGenericMotionListener_API12 getMotionListener() {
@@ -131,10 +131,10 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return mMotionListener;
     }
 
-       
-                                                                                         
-                                               
-       
+    /**
+     * This method returns the name of the shared object with the application entry point
+     * It can be overridden by derived classes.
+     */
     protected String getMainSharedObject() {
         String library;
         String[] libraries = SDLActivity.mSingleton.getLibraries();
@@ -146,54 +146,54 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return getContext().getApplicationInfo().nativeLibraryDir + "/" + library;
     }
 
-       
-                                                                  
-                                               
-       
+    /**
+     * This method returns the name of the application entry point
+     * It can be overridden by derived classes.
+     */
     protected String getMainFunction() {
         return "SDL_main";
     }
 
-       
-                                                                               
-                                                                              
-                                                                              
-                                                                              
-                                                                            
-                                                                            
-       
+    /**
+     * This method is called by SDL before loading the native shared libraries.
+     * It can be overridden to provide names of shared libraries to be loaded.
+     * The default implementation returns the defaults. It never returns null.
+     * An array returned by a new implementation must at least contain "SDL2".
+     * Also keep in mind that the order the libraries are loaded may matter.
+     * @return names of shared libraries to be loaded (e.g. "SDL2", "main").
+     */
     protected String[] getLibraries() {
         return new String[] {
             "hidapi",
             "SDL2",
-
-
-
-
+            // "SDL2_image",
+            // "SDL2_mixer",
+            // "SDL2_net",
+            // "SDL2_ttf",
             "main"
         };
     }
 
-
+    // Load the .so
     public void loadLibraries() {
        for (String lib : getLibraries()) {
           SDL.loadLibrary(lib);
        }
     }
 
-       
-                                                                                  
-                                                                                
-                                                                                
-                                                    
-       
+    /**
+     * This method is called by SDL before starting the native application thread.
+     * It can be overridden to provide the arguments after the application name.
+     * The default implementation returns an empty array. It never returns null.
+     * @return arguments for the native application.
+     */
     protected String[] getArguments() {
         return new String[0];
     }
 
     public static void initialize() {
-
-
+        // The static nature of the singleton and Android quirkyness force us to initialize everything here
+        // Otherwise, when exiting the app and returning to it, these variables *keep* their pre exit values
         mSingleton = null;
         mSurface = null;
         mTextEdit = null;
@@ -208,7 +208,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         mCurrentNativeState = NativeState.INIT;
     }
 
-
+    // Setup
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.v(TAG, "Device: " + Build.DEVICE);
@@ -222,11 +222,11 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             Log.v(TAG, "modify thread properties failed " + e.toString());
         }
 
-
+        // Load shared libraries
         String errorMsgBrokenLib = "";
         try {
             loadLibraries();
-            mBrokenLibraries = false;  
+            mBrokenLibraries = false; /* success */
         } catch(UnsatisfiedLinkError e) {
             System.err.println(e.getMessage());
             mBrokenLibraries = true;
@@ -250,7 +250,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog,int id) {
-
+                        // if this button is clicked, close current activity
                         SDLActivity.mSingleton.finish();
                     }
                 });
@@ -260,13 +260,13 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
            return;
         }
 
-
+        // Set up JNI
         SDL.setupJNI();
 
-
+        // Initialize state
         SDL.initialize();
 
-
+        // So we can call stuff from static callbacks
         mSingleton = this;
         SDL.setContext(this);
 
@@ -274,15 +274,15 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
         mHIDDeviceManager = HIDDeviceManager.acquire(this);
 
-
+        // Set up the surface
         mSurface = new SDLSurface(getApplication());
 
         mLayout = new RelativeLayout(this);
          mLayout.addView(mSurface);
 
-
+        // Get our current screen orientation and pass it down.
         mCurrentOrientation = SDLActivity.getCurrentOrientation();
-
+        // Only record current orientation
         SDLActivity.onNativeOrientationChanged(mCurrentOrientation);
 
         try {
@@ -300,7 +300,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
         getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(this);
 
-
+        // Get filename from "Open with" of another application
         Intent intent = getIntent();
         if (intent != null && intent.getData() != null) {
             String filename = intent.getData().getPath();
@@ -333,7 +333,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         SDLActivity.handleNativeState();
     }
 
-
+    // Events
     @Override
     protected void onPause() {
         Log.v(TAG, "onPause()");
@@ -474,10 +474,10 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
         if (SDLActivity.mSDLThread != null) {
 
-
+            // Send Quit event to "SDLThread" thread
             SDLActivity.nativeSendQuit();
 
-
+            // Wait for "SDLThread" thread to end
             try {
                 SDLActivity.mSDLThread.join();
             } catch(Exception e) {
@@ -492,29 +492,29 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
     @Override
     public void onBackPressed() {
-
-
-
-
-
+        // Check if we want to block the back button in case of mouse right click.
+        //
+        // If we do, the normal hardware back button will no longer work and people have to use home,
+        // but the mouse right click will work.
+        //
         String trapBack = SDLActivity.nativeGetHint("SDL_ANDROID_TRAP_BACK_BUTTON");
         if ((trapBack != null) && trapBack.equals("1")) {
-
+            // Exit and let the mouse handler handle this button (if appropriate)
             return;
         }
 
-
+        // Default system back button behavior.
         if (!isFinishing()) {
             super.onBackPressed();
         }
     }
 
-
+    // Called by JNI from SDL.
     public static void manualBackButton() {
         mSingleton.pressBackButton();
     }
 
-
+    // Used to get us onto the activity's main thread
     public void pressBackButton() {
         runOnUiThread(new Runnable() {
             @Override
@@ -526,7 +526,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         });
     }
 
-
+    // Used to access the system back behavior.
     public void superOnBackPressed() {
         super.onBackPressed();
     }
@@ -539,34 +539,34 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         }
 
         int keyCode = event.getKeyCode();
-
+        // Ignore certain special keys so they're handled by Android
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
             keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
             keyCode == KeyEvent.KEYCODE_CAMERA ||
-            keyCode == KeyEvent.KEYCODE_ZOOM_IN ||  
-            keyCode == KeyEvent.KEYCODE_ZOOM_OUT  
+            keyCode == KeyEvent.KEYCODE_ZOOM_IN || /* API 11 */
+            keyCode == KeyEvent.KEYCODE_ZOOM_OUT /* API 11 */
             ) {
             return false;
         }
         return super.dispatchKeyEvent(event);
     }
 
-     
+    /* Transition to next state */
     public static void handleNativeState() {
 
         if (mNextNativeState == mCurrentNativeState) {
-
+            // Already in same state, discard.
             return;
         }
 
-
+        // Try a transition to init state
         if (mNextNativeState == NativeState.INIT) {
 
             mCurrentNativeState = mNextNativeState;
             return;
         }
 
-
+        // Try a transition to paused state
         if (mNextNativeState == NativeState.PAUSED) {
             if (mSDLThread != null) {
                 nativePause();
@@ -578,19 +578,19 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             return;
         }
 
-
+        // Try a transition to resumed state
         if (mNextNativeState == NativeState.RESUMED) {
             if (mSurface.mIsSurfaceReady && mHasFocus && mIsResumedCalled) {
                 if (mSDLThread == null) {
-
-
-
+                    // This is the entry point to the C app.
+                    // Start up the C app thread and enable sensor input for the first time
+                    // FIXME: Why aren't we enabling sensor input at start?
 
                     mSDLThread = new Thread(new SDLMain(), "SDLThread");
                     mSurface.enableSensor(Sensor.TYPE_ACCELEROMETER, true);
                     mSDLThread.start();
 
-
+                    // No nativeResume(), don't signal Android_ResumeSem
                 } else {
                     nativeResume();
                 }
@@ -601,7 +601,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         }
     }
 
-
+    // Messages from the SDLMain thread
     static final int COMMAND_CHANGE_TITLE = 1;
     static final int COMMAND_CHANGE_WINDOW_STYLE = 2;
     static final int COMMAND_TEXTEDIT_HIDE = 3;
@@ -611,23 +611,23 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
     protected static boolean mFullscreenModeActive;
 
-       
-                                                                           
-                                                                          
-                                                                         
-                                                 
-                                                              
-                                                               
-       
+    /**
+     * This method is called by SDL if SDL did not handle a message itself.
+     * This happens if a received message contains an unsupported command.
+     * Method can be overwritten to handle Messages in a different class.
+     * @param command the command of the message.
+     * @param param the parameter of the message. May be null.
+     * @return if the message was handled in overridden method.
+     */
     protected boolean onUnhandledMessage(int command, Object param) {
         return false;
     }
 
-       
-                                                                 
-                                                                 
-                                                                 
-       
+    /**
+     * A Handler class for Messages from native SDL applications.
+     * It uses current Activities as target (e.g. for the title).
+     * static to prevent implicit references to enclosing object.
+     */
     protected static class SDLCommandHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
@@ -675,9 +675,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                 break;
             case COMMAND_TEXTEDIT_HIDE:
                 if (mTextEdit != null) {
-
-
-
+                    // Note: On some devices setting view to GONE creates a flicker in landscape.
+                    // Setting the View's sizes to 0 is similar to GONE but without the flicker.
+                    // The sizes will be set to useful values when the keyboard is shown again.
                     mTextEdit.setLayoutParams(new RelativeLayout.LayoutParams(0, 0));
 
                     InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -710,10 +710,10 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         }
     }
 
-
+    // Handler for the messages
     Handler commandHandler = new SDLCommandHandler();
 
-
+    // Send a message from the SDLMain thread
     boolean sendCommand(int command, Object data) {
         Message msg = commandHandler.obtainMessage();
         msg.arg1 = command;
@@ -722,13 +722,13 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
         if (Build.VERSION.SDK_INT >= 19) {
             if (command == COMMAND_CHANGE_WINDOW_STYLE) {
-
-
+                // Ensure we don't return until the resize has actually happened,
+                // or 500ms have passed.
 
                 boolean bShouldWait = false;
 
                 if (data instanceof Integer) {
-
+                    // Let's figure out if we're already laid out fullscreen or not.
                     Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
                     DisplayMetrics realMetrics = new DisplayMetrics();
                     display.getRealMetrics(realMetrics);
@@ -737,30 +737,30 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                             (realMetrics.heightPixels == mSurface.getHeight()));
 
                     if ((Integer) data == 1) {
-
-
-
-
-
+                        // If we aren't laid out fullscreen or actively in fullscreen mode already, we're going
+                        // to change size and should wait for surfaceChanged() before we return, so the size
+                        // is right back in native code.  If we're already laid out fullscreen, though, we're
+                        // not going to change size even if we change decor modes, so we shouldn't wait for
+                        // surfaceChanged() -- which may not even happen -- and should return immediately.
                         bShouldWait = !bFullscreenLayout;
                     } else {
-
-
-
+                        // If we're laid out fullscreen (even if the status bar and nav bar are present),
+                        // or are actively in fullscreen, we're going to change size and should wait for
+                        // surfaceChanged before we return, so the size is right back in native code.
                         bShouldWait = bFullscreenLayout;
                     }
                 }
 
                 if (bShouldWait && (SDLActivity.getContext() != null)) {
-
-
-
-
-
-
-
-
-
+                    // We'll wait for the surfaceChanged() method, which will notify us
+                    // when called.  That way, we know our current size is really the
+                    // size we need, instead of grabbing a size that's still got
+                    // the navigation and/or status bars before they're hidden.
+                    //
+                    // We'll wait for up to half a second, because some devices
+                    // take a surprisingly long time for the surface resize, but
+                    // then we'll just give up and return.
+                    //
                     synchronized (SDLActivity.getContext()) {
                         try {
                             SDLActivity.getContext().wait(500);
@@ -775,7 +775,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return result;
     }
 
-
+    // C functions we call
     public static native int nativeSetupJNI();
     public static native int nativeRunMain(String library, String function, Object arguments);
     public static native void nativeLowMemory();
@@ -807,27 +807,27 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     public static native void nativePermissionResult(int requestCode, boolean result);
     public static native void onNativeLocaleChanged();
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean setActivityTitle(String title) {
-
+        // Called from SDLMain() thread and can't directly affect the view
         return mSingleton.sendCommand(COMMAND_CHANGE_TITLE, title);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static void setWindowStyle(boolean fullscreen) {
-
+        // Called from SDLMain() thread and can't directly affect the view
         mSingleton.sendCommand(COMMAND_CHANGE_WINDOW_STYLE, fullscreen ? 1 : 0);
     }
 
-       
-                                              
-                                                                                
-                                   
-       
+    /**
+     * This method is called by SDL using JNI.
+     * This is a static method for JNI convenience, it calls a non-static method
+     * so that is can be overridden
+     */
     public static void setOrientation(int w, int h, boolean resizable, String hint)
     {
         if (mSingleton != null) {
@@ -835,15 +835,15 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         }
     }
 
-       
-                             
-       
+    /**
+     * This can be overridden
+     */
     public void setOrientationBis(int w, int h, boolean resizable, String hint)
     {
         int orientation_landscape = -1;
         int orientation_portrait = -1;
 
-         
+        /* If set, hint "explicitly controls which UI orientations are allowed". */
         if (hint.contains("LandscapeRight") && hint.contains("LandscapeLeft")) {
             orientation_landscape = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
         } else if (hint.contains("LandscapeRight")) {
@@ -862,33 +862,33 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
         boolean is_landscape_allowed = (orientation_landscape != -1);
         boolean is_portrait_allowed = (orientation_portrait != -1);
-        int req;  
+        int req; /* Requested orientation */
 
-         
+        /* No valid hint, nothing is explicitly allowed */
         if (!is_portrait_allowed && !is_landscape_allowed) {
             if (resizable) {
-                 
+                /* All orientations are allowed */
                 req = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR;
             } else {
-                 
+                /* Fixed window and nothing specified. Get orientation from w/h of created window */
                 req = (w > h ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
             }
         } else {
-             
+            /* At least one orientation is allowed */
             if (resizable) {
                 if (is_portrait_allowed && is_landscape_allowed) {
-                     
+                    /* hint allows both landscape and portrait, promote to full sensor */
                     req = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR;
                 } else {
-                     
+                    /* Use the only one allowed "orientation" */
                     req = (is_landscape_allowed ? orientation_landscape : orientation_portrait);
                 }
             } else {
-                 
+                /* Fixed window and both orientations are allowed. Choose one. */
                 if (is_portrait_allowed && is_landscape_allowed) {
                     req = (w > h ? orientation_landscape : orientation_portrait);
                 } else {
-                     
+                    /* Use the only one allowed "orientation" */
                     req = (is_landscape_allowed ? orientation_landscape : orientation_portrait);
                 }
             }
@@ -898,9 +898,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         mSingleton.setRequestedOrientation(req);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static void minimizeWindow() {
 
         if (mSingleton == null) {
@@ -913,33 +913,33 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         mSingleton.startActivity(startMain);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean shouldMinimizeOnFocusLoss() {
-  
-                                          
-                                     
-                            
-             
+/*
+        if (Build.VERSION.SDK_INT >= 24) {
+            if (mSingleton == null) {
+                return true;
+            }
 
-                                                   
-                             
-             
+            if (mSingleton.isInMultiWindowMode()) {
+                return false;
+            }
 
-                                                        
-                             
-             
-         
+            if (mSingleton.isInPictureInPictureMode()) {
+                return false;
+            }
+        }
 
-                    
-  
+        return true;
+*/
         return false;
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean isScreenKeyboardShown()
     {
         if (mTextEdit == null) {
@@ -955,18 +955,18 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean supportsRelativeMouse()
     {
-
-
-
-
-
-
-
+        // DeX mode in Samsung Experience 9.0 and earlier doesn't support relative mice properly under
+        // Android 7 APIs, and simply returns no data under Android 8 APIs.
+        //
+        // This is fixed in Samsung Experience 9.5, which corresponds to Android 8.1.0, and
+        // thus SDK version 27.  If we are in DeX mode and not API 27 or higher, as a result,
+        // we should stick to relative mode.
+        //
         if ((Build.VERSION.SDK_INT < 27) && isDeXMode()) {
             return false;
         }
@@ -974,9 +974,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return SDLActivity.getMotionListener().supportsRelativeMouse();
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean setRelativeMouseEnabled(boolean enabled)
     {
         if (enabled && !supportsRelativeMouse()) {
@@ -986,9 +986,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return SDLActivity.getMotionListener().setRelativeMouseEnabled(enabled);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean sendMessage(int command, int param) {
         if (mSingleton == null) {
             return false;
@@ -996,16 +996,16 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return mSingleton.sendCommand(command, param);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static Context getContext() {
         return SDL.getContext();
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean isAndroidTV() {
         UiModeManager uiModeManager = (UiModeManager) getContext().getSystemService(UI_MODE_SERVICE);
         if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
@@ -1035,17 +1035,17 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return Math.sqrt((dWidthInches * dWidthInches) + (dHeightInches * dHeightInches));
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean isTablet() {
-
+        // If our diagonal size is seven inches or greater, we consider ourselves a tablet.
         return (getDiagonal() >= 7.0);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean isChromebook() {
         if (getContext() == null) {
             return false;
@@ -1053,9 +1053,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return getContext().getPackageManager().hasSystemFeature("org.chromium.arc.device_management");
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean isDeXMode() {
         if (Build.VERSION.SDK_INT < 24) {
             return false;
@@ -1070,16 +1070,16 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         }
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static DisplayMetrics getDisplayDPI() {
         return getContext().getResources().getDisplayMetrics();
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean getManifestEnvironmentVariables() {
         try {
             if (getContext() == null) {
@@ -1100,7 +1100,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                     nativeSetenv(name, value);
                 }
             }
-             
+            /* environment variables set! */
             return true;
         } catch (Exception e) {
            Log.v(TAG, "exception " + e.toString());
@@ -1108,18 +1108,18 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return false;
     }
 
-
+    // This method is called by SDLControllerManager's API 26 Generic Motion Handler.
     public static View getContentView()
     {
         return mLayout;
     }
 
     static class ShowTextInputTask implements Runnable {
-          
-                                                                                
-                                                                           
-                                 
-           
+        /*
+         * This is used to regulate the pan&scan method to have some offset from
+         * the bottom edge of the input region and the top edge of an input
+         * method (soft keyboard)
+         */
         static final int HEIGHT_PADDING = 15;
 
         public int x, y, w, h;
@@ -1130,7 +1130,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             this.w = w;
             this.h = h;
 
-             
+            /* Minimum size of 1 pixel, so it takes focus. */
             if (this.w <= 0) {
                 this.w = 1;
             }
@@ -1163,17 +1163,17 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         }
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean showTextInput(int x, int y, int w, int h) {
-
+        // Transfer the task to the main thread as a Runnable
         return mSingleton.commandHandler.post(new ShowTextInputTask(x, y, w, h));
     }
 
     public static boolean isTextInputEvent(KeyEvent event) {
 
-
+        // Key pressed with Ctrl should be sent as SDL_KEYDOWN/SDL_KEYUP and not SDL_TEXTINPUT
         if (event.isCtrlPressed()) {
             return false;
         }
@@ -1181,9 +1181,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return event.isPrintingKey() || event.getKeyCode() == KeyEvent.KEYCODE_SPACE;
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static Surface getNativeSurface() {
         if (SDLActivity.mSurface == null) {
             return null;
@@ -1191,11 +1191,11 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return SDLActivity.mSurface.getNativeSurface();
     }
 
+    // Input
 
-
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static void initTouch() {
         int[] ids = InputDevice.getDeviceIds();
 
@@ -1207,21 +1207,21 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         }
     }
 
+    // Messagebox
 
-
-     
+    /** Result of current messagebox. Also used for blocking the calling thread. */
     protected final int[] messageboxSelection = new int[1];
 
-       
-                                              
-                                                                    
-                                                                    
-                                                                  
-                                                             
-                                                                 
-                                                                             
-                               
-       
+    /**
+     * This method is called by SDL using JNI.
+     * Shows the messagebox from UI thread and block calling thread.
+     * buttonFlags, buttonIds and buttonTexts must have same length.
+     * @param buttonFlags array containing flags for every button.
+     * @param buttonIds array containing id for every button.
+     * @param buttonTexts array containing text for every button.
+     * @param colors null for default or array of length 5 containing colors.
+     * @return button id or -1.
+     */
     public int messageboxShowMessageBox(
             final int flags,
             final String title,
@@ -1233,13 +1233,13 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
         messageboxSelection[0] = -1;
 
-
+        // sanity checks
 
         if ((buttonFlags.length != buttonIds.length) && (buttonIds.length != buttonTexts.length)) {
-            return -1;  
+            return -1; // implementation broken
         }
 
-
+        // collect arguments for Dialog
 
         final Bundle args = new Bundle();
         args.putInt("flags", flags);
@@ -1250,7 +1250,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         args.putStringArray("buttonTexts", buttonTexts);
         args.putIntArray("colors", colors);
 
-
+        // trigger Dialog creation on UI thread
 
         runOnUiThread(new Runnable() {
             @Override
@@ -1259,7 +1259,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             }
         });
 
-
+        // block the calling thread
 
         synchronized (messageboxSelection) {
             try {
@@ -1270,16 +1270,16 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             }
         }
 
-
+        // return selected value
 
         return messageboxSelection[0];
     }
 
     protected void messageboxCreateAndShow(Bundle args) {
 
+        // TODO set values from "flags" to messagebox dialog
 
-
-
+        // get colors
 
         int[] colors = args.getIntArray("colors");
         int backgroundColor;
@@ -1302,7 +1302,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             buttonSelectedColor = Color.TRANSPARENT;
         }
 
-
+        // create dialog with title and a listener to wake up calling thread
 
         final AlertDialog dialog = new AlertDialog.Builder(this).create();
         dialog.setTitle(args.getString("title"));
@@ -1316,7 +1316,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             }
         });
 
-
+        // create text
 
         TextView message = new TextView(this);
         message.setGravity(Gravity.CENTER);
@@ -1325,7 +1325,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             message.setTextColor(textColor);
         }
 
-
+        // create buttons
 
         int[] buttonFlags = args.getIntArray("buttonFlags");
         int[] buttonIds = args.getIntArray("buttonIds");
@@ -1347,12 +1347,12 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                 }
             });
             if (buttonFlags[i] != 0) {
-
+                // see SDL_messagebox.h
                 if ((buttonFlags[i] & 0x00000001) != 0) {
                     mapping.put(KeyEvent.KEYCODE_ENTER, button);
                 }
                 if ((buttonFlags[i] & 0x00000002) != 0) {
-                    mapping.put(KeyEvent.KEYCODE_ESCAPE, button);  
+                    mapping.put(KeyEvent.KEYCODE_ESCAPE, button); /* API 11 */
                 }
             }
             button.setText(buttonTexts[i]);
@@ -1360,25 +1360,25 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                 button.setTextColor(textColor);
             }
             if (buttonBorderColor != Color.TRANSPARENT) {
-
+                // TODO set color for border of messagebox button
             }
             if (buttonBackgroundColor != Color.TRANSPARENT) {
                 Drawable drawable = button.getBackground();
                 if (drawable == null) {
-
+                    // setting the color this way removes the style
                     button.setBackgroundColor(buttonBackgroundColor);
                 } else {
-
+                    // setting the color this way keeps the style (gradient, padding, etc.)
                     drawable.setColorFilter(buttonBackgroundColor, PorterDuff.Mode.MULTIPLY);
                 }
             }
             if (buttonSelectedColor != Color.TRANSPARENT) {
-
+                // TODO set color for selected messagebox button
             }
             buttons.addView(button);
         }
 
-
+        // create content
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -1388,7 +1388,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
             content.setBackgroundColor(backgroundColor);
         }
 
-
+        // add content to dialog and return
 
         dialog.setView(content);
         dialog.setOnKeyListener(new Dialog.OnKeyListener() {
@@ -1399,7 +1399,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                     if (event.getAction() == KeyEvent.ACTION_UP) {
                         button.performClick();
                     }
-                    return true;  
+                    return true; // also for ignored actions
                 }
                 return false;
             }
@@ -1429,37 +1429,37 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
             Handler handler = getWindow().getDecorView().getHandler();
             if (handler != null) {
-                handler.removeCallbacks(rehideSystemUi);  
+                handler.removeCallbacks(rehideSystemUi); // Prevent a hide loop.
                 handler.postDelayed(rehideSystemUi, 2000);
             }
 
         }
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean clipboardHasText() {
         return mClipboardHandler.clipboardHasText();
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static String clipboardGetText() {
         return mClipboardHandler.clipboardGetText();
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static void clipboardSetText(String string) {
         mClipboardHandler.clipboardSetText(string);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static int createCustomCursor(int[] colors, int width, int height, int hotSpotX, int hotSpotY) {
         Bitmap bitmap = Bitmap.createBitmap(colors, width, height, Bitmap.Config.ARGB_8888);
         ++mLastCursorID;
@@ -1476,9 +1476,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return mLastCursorID;
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean setCustomCursor(int cursorID) {
 
         if (Build.VERSION.SDK_INT >= 24) {
@@ -1493,47 +1493,47 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return true;
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static boolean setSystemCursor(int cursorID) {
-        int cursor_type = 0;  
+        int cursor_type = 0; //PointerIcon.TYPE_NULL;
         switch (cursorID) {
         case SDL_SYSTEM_CURSOR_ARROW:
-            cursor_type = 1000;  
+            cursor_type = 1000; //PointerIcon.TYPE_ARROW;
             break;
         case SDL_SYSTEM_CURSOR_IBEAM:
-            cursor_type = 1008;  
+            cursor_type = 1008; //PointerIcon.TYPE_TEXT;
             break;
         case SDL_SYSTEM_CURSOR_WAIT:
-            cursor_type = 1004;  
+            cursor_type = 1004; //PointerIcon.TYPE_WAIT;
             break;
         case SDL_SYSTEM_CURSOR_CROSSHAIR:
-            cursor_type = 1007;  
+            cursor_type = 1007; //PointerIcon.TYPE_CROSSHAIR;
             break;
         case SDL_SYSTEM_CURSOR_WAITARROW:
-            cursor_type = 1004;  
+            cursor_type = 1004; //PointerIcon.TYPE_WAIT;
             break;
         case SDL_SYSTEM_CURSOR_SIZENWSE:
-            cursor_type = 1017;  
+            cursor_type = 1017; //PointerIcon.TYPE_TOP_LEFT_DIAGONAL_DOUBLE_ARROW;
             break;
         case SDL_SYSTEM_CURSOR_SIZENESW:
-            cursor_type = 1016;  
+            cursor_type = 1016; //PointerIcon.TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW;
             break;
         case SDL_SYSTEM_CURSOR_SIZEWE:
-            cursor_type = 1014;  
+            cursor_type = 1014; //PointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW;
             break;
         case SDL_SYSTEM_CURSOR_SIZENS:
-            cursor_type = 1015;  
+            cursor_type = 1015; //PointerIcon.TYPE_VERTICAL_DOUBLE_ARROW;
             break;
         case SDL_SYSTEM_CURSOR_SIZEALL:
-            cursor_type = 1020;  
+            cursor_type = 1020; //PointerIcon.TYPE_GRAB;
             break;
         case SDL_SYSTEM_CURSOR_NO:
-            cursor_type = 1012;  
+            cursor_type = 1012; //PointerIcon.TYPE_NO_DROP;
             break;
         case SDL_SYSTEM_CURSOR_HAND:
-            cursor_type = 1002;  
+            cursor_type = 1002; //PointerIcon.TYPE_HAND;
             break;
         }
         if (Build.VERSION.SDK_INT >= 24) {
@@ -1546,9 +1546,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return true;
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static void requestPermission(String permission, int requestCode) {
         if (Build.VERSION.SDK_INT < 23) {
             nativePermissionResult(requestCode, true);
@@ -1569,9 +1569,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         nativePermissionResult(requestCode, result);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static int openURL(String url)
     {
         try {
@@ -1593,9 +1593,9 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return 0;
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static int showToast(String message, int duration, int gravity, int xOffset, int yOffset)
     {
         if(null == mSingleton) {
@@ -1640,13 +1640,13 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     }
 }
 
-   
-                                                
-  
+/**
+    Simple runnable to start the SDL application
+*/
 class SDLMain implements Runnable {
     @Override
     public void run() {
-
+        // Runs SDL_main()
         String library = SDLActivity.mSingleton.getMainSharedObject();
         String function = SDLActivity.mSingleton.getMainFunction();
         String[] arguments = SDLActivity.mSingleton.getArguments();
@@ -1664,35 +1664,35 @@ class SDLMain implements Runnable {
         Log.v("SDL", "Finished main function");
 
         if (SDLActivity.mSingleton != null && !SDLActivity.mSingleton.isFinishing()) {
-
+            // Let's finish the Activity
             SDLActivity.mSDLThread = null;
             SDLActivity.mSingleton.finish();
-        }   
+        }  // else: Activity is already being destroyed
 
     }
 }
 
 
-   
-                                                                             
-                                   
+/**
+    SDLSurface. This is what we draw on, so we need to know when it's created
+    in order to do anything useful.
 
-                                                          
-  
+    Because of this, that's where we set up the SDL thread
+*/
 class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
     View.OnKeyListener, View.OnTouchListener, SensorEventListener  {
 
-
+    // Sensors
     protected SensorManager mSensorManager;
     protected Display mDisplay;
 
-
+    // Keep track of the surface size to normalize touch events
     protected float mWidth, mHeight;
 
-
+    // Is SurfaceView ready for rendering
     public boolean mIsSurfaceReady;
 
-
+    // Startup
     public SDLSurface(Context context) {
         super(context);
         getHolder().addCallback(this);
@@ -1708,7 +1708,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
 
         setOnGenericMotionListener(SDLActivity.getMotionListener());
 
-
+        // Some arbitrary defaults to avoid a potential division by zero
         mWidth = 1.0f;
         mHeight = 1.0f;
 
@@ -1732,19 +1732,19 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         return getHolder().getSurface();
     }
 
-
+    // Called when we have a valid drawing surface
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.v("SDL", "surfaceCreated()");
         SDLActivity.onNativeSurfaceCreated();
     }
 
-
+    // Called when we lose the surface
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         Log.v("SDL", "surfaceDestroyed()");
 
-
+        // Transition to pause, if needed
         SDLActivity.mNextNativeState = SDLActivity.NativeState.PAUSED;
         SDLActivity.handleNativeState();
 
@@ -1752,7 +1752,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         SDLActivity.onNativeSurfaceDestroyed();
     }
 
-
+    // Called when the surface is resized
     @Override
     public void surfaceChanged(SurfaceHolder holder,
                                int format, int width, int height) {
@@ -1778,7 +1778,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         }
 
         synchronized(SDLActivity.getContext()) {
-
+            // In case we're waiting on a size change after going fullscreen, send a notification.
             SDLActivity.getContext().notifyAll();
         }
 
@@ -1787,8 +1787,8 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         SDLActivity.nativeSetScreenResolution(width, height, nDeviceWidth, nDeviceHeight, mDisplay.getRefreshRate());
         SDLActivity.onNativeResize();
 
-
-
+        // Prevent a screen distortion glitch,
+        // for instance when the device is in Landscape and a Portrait App is resumed.
         boolean skip = false;
         int requestedOrientation = SDLActivity.mSingleton.getRequestedOrientation();
 
@@ -1802,7 +1802,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
             }
         }
 
-
+        // Special Patch for Square Resolution: Black Berry Passport
         if (skip) {
            double min = Math.min(mWidth, mHeight);
            double max = Math.max(mWidth, mHeight);
@@ -1813,7 +1813,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
            }
         }
 
-
+        // Don't skip in MultiWindow.
         if (skip) {
             if (Build.VERSION.SDK_INT >= 24) {
                 if (SDLActivity.mSingleton.isInMultiWindowMode()) {
@@ -1829,17 +1829,17 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
            return;
         }
 
-         
+        /* If the surface has been previously destroyed by onNativeSurfaceDestroyed, recreate it here */
         SDLActivity.onNativeSurfaceChanged();
 
-         
+        /* Surface is ready */
         mIsSurfaceReady = true;
 
         SDLActivity.mNextNativeState = SDLActivity.NativeState.RESUMED;
         SDLActivity.handleNativeState();
     }
 
-
+    // Key events
     @Override
     public boolean onKey(View  v, int keyCode, KeyEvent event) {
 
@@ -1853,21 +1853,21 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
             }
         }
 
+//        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+//            Log.v("SDL", "key down: " + keyCode + ", deviceId = " + deviceId + ", source = " + source);
+//        } else if (event.getAction() == KeyEvent.ACTION_UP) {
+//            Log.v("SDL", "key up: " + keyCode + ", deviceId = " + deviceId + ", source = " + source);
+//        }
 
-
-
-
-
-
-
-
-
-
-
-
-
+        // Dispatch the different events depending on where they come from
+        // Some SOURCE_JOYSTICK, SOURCE_DPAD or SOURCE_GAMEPAD are also SOURCE_KEYBOARD
+        // So, we try to process them as JOYSTICK/DPAD/GAMEPAD events first, if that fails we try them as KEYBOARD
+        //
+        // Furthermore, it's possible a game controller has SOURCE_KEYBOARD and
+        // SOURCE_JOYSTICK, while its key events arrive from the keyboard source
+        // So, retrieve the device itself and check all of its sources
         if (SDLControllerManager.isDeviceSDLJoystick(deviceId)) {
-
+            // Note that we process events with specific key codes here
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 if (SDLControllerManager.onNativePadDown(deviceId, keyCode) == 0) {
                     return true;
@@ -1893,14 +1893,14 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         }
 
         if ((source & InputDevice.SOURCE_MOUSE) != 0) {
-
-
+            // on some devices key events are sent for mouse BUTTON_BACK/FORWARD presses
+            // they are ignored here because sending them as mouse input to SDL is messy
             if ((keyCode == KeyEvent.KEYCODE_BACK) || (keyCode == KeyEvent.KEYCODE_FORWARD)) {
                 switch (event.getAction()) {
                 case KeyEvent.ACTION_DOWN:
                 case KeyEvent.ACTION_UP:
-
-
+                    // mark the event as handled or it will be handled by system
+                    // handling KEYCODE_BACK by system will call onBackPressed()
                     return true;
                 }
             }
@@ -1909,10 +1909,10 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         return false;
     }
 
-
+    // Touch events
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-         
+        /* Ref: http://developer.android.com/training/gestures/multi.html */
         int touchDevId = event.getDeviceId();
         final int pointerCount = event.getPointerCount();
         int action = event.getActionMasked();
@@ -1920,19 +1920,19 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         int i = -1;
         float x,y,p;
 
-          
-                                                                                    
-                                                   
-                                             
-                                                   
-           
+        /*
+         * Prevent id to be -1, since it's used in SDL internal for synthetic events
+         * Appears when using Android emulator, eg:
+         *  adb shell input mouse tap 100 100
+         *  adb shell input touchscreen tap 100 100
+         */
         if (touchDevId < 0) {
             touchDevId -= 1;
         }
 
-
-
-
+        // 12290 = Samsung DeX mode desktop mouse
+        // 12290 = 0x3002 = 0x2002 | 0x1002 = SOURCE_MOUSE | SOURCE_TOUCHSCREEN
+        // 0x2   = SOURCE_CLASS_POINTER
         if (event.getSource() == InputDevice.SOURCE_MOUSE || event.getSource() == (InputDevice.SOURCE_MOUSE | InputDevice.SOURCE_TOUCHSCREEN)) {
             int mouseButton = 1;
             try {
@@ -1943,8 +1943,8 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
             } catch(Exception ignored) {
             }
 
-
-
+            // We need to check if we're in relative mouse mode and get the axis offset rather than the x/y values
+            // if we are.  We'll leverage our existing mouse motion listener
             SDLGenericMotionListener_API12 motionListener = SDLActivity.getMotionListener();
             x = motionListener.getEventX(event);
             y = motionListener.getEventY(event);
@@ -1959,8 +1959,8 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
                         y = event.getY(i) / mHeight;
                         p = event.getPressure(i);
                         if (p > 1.0f) {
-
-
+                            // may be larger than 1.0f on some devices
+                            // see the documentation of getPressure(i)
                             p = 1.0f;
                         }
                         SDLActivity.onNativeTouch(touchDevId, pointerFingerId, action, x, y, p);
@@ -1969,12 +1969,12 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
 
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_DOWN:
-
+                    // Primary pointer up/down, the index is always zero
                     i = 0;
-                     
+                    /* fallthrough */
                 case MotionEvent.ACTION_POINTER_UP:
                 case MotionEvent.ACTION_POINTER_DOWN:
-
+                    // Non primary pointer up/down
                     if (i == -1) {
                         i = event.getActionIndex();
                     }
@@ -1984,8 +1984,8 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
                     y = event.getY(i) / mHeight;
                     p = event.getPressure(i);
                     if (p > 1.0f) {
-
-
+                        // may be larger than 1.0f on some devices
+                        // see the documentation of getPressure(i)
                         p = 1.0f;
                     }
                     SDLActivity.onNativeTouch(touchDevId, pointerFingerId, action, x, y, p);
@@ -1998,8 +1998,8 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
                         y = event.getY(i) / mHeight;
                         p = event.getPressure(i);
                         if (p > 1.0f) {
-
-
+                            // may be larger than 1.0f on some devices
+                            // see the documentation of getPressure(i)
                             p = 1.0f;
                         }
                         SDLActivity.onNativeTouch(touchDevId, pointerFingerId, MotionEvent.ACTION_UP, x, y, p);
@@ -2014,9 +2014,9 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         return true;
    }
 
-
+    // Sensor events
     public void enableSensor(int sensortype, boolean enabled) {
-
+        // TODO: This uses getDefaultSensor - what if we have >1 accels?
         if (enabled) {
             mSensorManager.registerListener(this,
                             mSensorManager.getDefaultSensor(sensortype),
@@ -2029,15 +2029,15 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
+        // TODO
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 
-
-
+            // Since we may have an orientation set, we won't receive onConfigurationChanged events.
+            // We thus should check here.
             int newOrientation;
 
             float x, y;
@@ -2078,7 +2078,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
         }
     }
 
-
+    // Captured pointer events for API 26.
     public boolean onCapturedPointerEvent(MotionEvent event)
     {
         int action = event.getActionMasked();
@@ -2101,10 +2101,10 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
             case MotionEvent.ACTION_BUTTON_PRESS:
             case MotionEvent.ACTION_BUTTON_RELEASE:
 
-
+                // Change our action value to what SDL's code expects.
                 if (action == MotionEvent.ACTION_BUTTON_PRESS) {
                     action = MotionEvent.ACTION_DOWN;
-                } else {  
+                } else { /* MotionEvent.ACTION_BUTTON_RELEASE */
                     action = MotionEvent.ACTION_UP;
                 }
 
@@ -2121,9 +2121,9 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
 
 }
 
-                                                                               
-                  
-   
+/* This is a fake invisible editor view that receives the input and defines the
+ * pan&scan region
+ */
 class DummyEdit extends View implements View.OnKeyListener {
     InputConnection ic;
 
@@ -2141,9 +2141,9 @@ class DummyEdit extends View implements View.OnKeyListener {
 
     @Override
     public boolean onKey(View v, int keyCode, KeyEvent event) {
-          
-                                                   
-           
+        /*
+         * This handles the hardware keyboard input
+         */
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             if (SDLActivity.isTextInputEvent(event)) {
                 ic.commitText(String.valueOf((char) event.getUnicodeChar()), 1);
@@ -2158,15 +2158,15 @@ class DummyEdit extends View implements View.OnKeyListener {
         return false;
     }
 
-
+    //
     @Override
     public boolean onKeyPreIme (int keyCode, KeyEvent event) {
-
-
-
-
-
-
+        // As seen on StackOverflow: http://stackoverflow.com/questions/7634346/keyboard-hide-event
+        // FIXME: Discussion at http://bugzilla.libsdl.org/show_bug.cgi?id=1639
+        // FIXME: This is not a 100% effective solution to the problem of detecting if the keyboard is showing or not
+        // FIXME: A more effective solution would be to assume our Layout to be RelativeLayout or LinearLayout
+        // FIXME: And determine the keyboard presence doing this: http://stackoverflow.com/questions/2150078/how-to-check-visibility-of-software-keyboard-in-android
+        // FIXME: An even more effective way would be if Android provided this out of the box, but where would the fun be in that :)
         if (event.getAction()==KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
             if (SDLActivity.mTextEdit != null && SDLActivity.mTextEdit.getVisibility() == View.VISIBLE) {
                 SDLActivity.onNativeKeyboardFocusLost();
@@ -2181,7 +2181,7 @@ class DummyEdit extends View implements View.OnKeyListener {
 
         outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
         outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
-                | EditorInfo.IME_FLAG_NO_FULLSCREEN  ;
+                | EditorInfo.IME_FLAG_NO_FULLSCREEN /* API 11 */;
 
         return ic;
     }
@@ -2196,17 +2196,17 @@ class SDLInputConnection extends BaseInputConnection {
 
     @Override
     public boolean sendKeyEvent(KeyEvent event) {
-          
-                                                                                                           
-                                                                                                             
-                                                                                                               
-                                            
-           
+        /*
+         * This used to handle the keycodes from soft keyboard (and IME-translated input from hardkeyboard)
+         * However, as of Ice Cream Sandwich and later, almost all soft keyboard doesn't generate key presses
+         * and so we need to generate them ourselves in commitText.  To avoid duplicates on the handful of keys
+         * that still do, we empty this out.
+         */
 
-          
-                                                                                                                
-                                                                                    
-           
+        /*
+         * Return DOES still generate a key event, however.  So rather than using it as the 'click a button' key
+         * as we do with physical keyboards, let's just use it to hide the keyboard.
+         */
 
         if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
             if (SDLActivity.onNativeSoftReturnKey()) {
@@ -2252,11 +2252,11 @@ class SDLInputConnection extends BaseInputConnection {
 
     @Override
     public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-
-
+        // Workaround to capture backspace key. Ref: http://stackoverflow.com/questions/14560344/android-backspace-in-webview-baseinputconnection
+        // and https://bugzilla.libsdl.org/show_bug.cgi?id=2265
         if (beforeLength > 0 && afterLength == 0) {
             boolean ret = true;
-
+            // backspace(s)
             while (beforeLength-- > 0) {
                boolean ret_key = sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
                               && sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));

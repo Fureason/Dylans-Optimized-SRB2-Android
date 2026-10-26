@@ -13,7 +13,7 @@ import android.view.View;
 public class Border extends View {
     private Rect gameRect;
     private Bitmap bitmap;
-    private Bitmap _bitmap;  
+    private Bitmap _bitmap; // Default bitmap
     private Rect positionRect;
     private Rect bitmapRect;
 
@@ -27,20 +27,20 @@ public class Border extends View {
     public void setupBorderPositions(int width, int height) {
         if (width <= 0 || height <= 0 || bitmap == null) return;
 
-
+        // 1. Calculate the scale to fill the screen (Aspect Fill)
         float scale = Math.max((float) width / bitmap.getWidth(), (float) height / bitmap.getHeight());
 
         float drawWidth = bitmap.getWidth() * scale;
         float drawHeight = bitmap.getHeight() * scale;
 
-
+        // 2. Calculate offsets to center the image
         float offsetX = (width - drawWidth) / 2f;
         float offsetY = (height - drawHeight) / 2f;
 
-
+        // 3. Set the rectangles. Rect(left, top, right, bottom)
         positionRect = new Rect((int) offsetX, (int) offsetY, (int) (offsetX + drawWidth), (int) (offsetY + drawHeight));
         
-
+        // bitmapRect is the SOURCE area (in the image itself). 
         bitmapRect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
 
         Log.d("Border", "Layout: " + width + "x" + height + " -> Drawing border at " + positionRect.toShortString());
@@ -78,14 +78,14 @@ public class Border extends View {
 
         canvas.save();
 
-
+        // Clip out the area where the game is drawn
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             canvas.clipOutRect(gameRect);
         } else {
             canvas.clipRect(gameRect, Region.Op.DIFFERENCE);
         }
 
-
+        // Draw the border bitmap using the calculated positions
         canvas.drawBitmap(bitmap, bitmapRect, positionRect, null);
 
         canvas.restore();

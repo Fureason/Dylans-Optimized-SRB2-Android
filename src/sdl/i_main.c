@@ -14,14 +14,14 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //-----------------------------------------------------------------------------
-
-
+/// \file
+/// \brief Main program, simply calls D_SRB2Main and D_SRB2Loop, the high level loop.
 
 #if !defined(__ANDROID__)
 #include "../doomdef.h"
 #include "../m_argv.h"
 #include "../d_main.h"
-#include "../m_misc.h" 
+#include "../m_misc.h"/* path shit */
 #include "../i_system.h"
 
 #if defined (__GNUC__) || defined (__unix__)
@@ -32,7 +32,7 @@
 #include <errno.h>
 #endif
 
-#include "time.h"  
+#include "time.h" // For log timestamps
 
 #ifdef HAVE_SDL
 
@@ -127,7 +127,7 @@ static void InitLogging(void)
 					"%s"PATHSEP DEFAULTDIR PATHSEP"%s"PATHSEP, logdir, reldir);
 		}
 		else
-#endif 
+#endif/*DEFAULTDIR*/
 		{
 			left = snprintf(logfilename, sizeof logfilename,
 					"."PATHSEP"%s"PATHSEP, reldir);
@@ -147,27 +147,27 @@ static void InitLogging(void)
 	if (logdir)
 		link = va("%s/"DEFAULTDIR"/latest-log.txt", logdir);
 	else
-#endif 
+#endif/*DEFAULTDIR*/
 		link = "latest-log.txt";
 	unlink(link);
 	if (symlink(logfilename, link) == -1)
 	{
 		I_OutputMsg("Error symlinking latest-log.txt: %s\n", strerror(errno));
 	}
-#else 
+#else/*defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)*/
 	logstream = fopen(customfile ? logfilename : "latest-log.txt", "wt+");
-#endif 
+#endif/*defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)*/
 }
 #endif
 
 
-                            
+/**	\brief	The main function
 
-                          
-                          
+	\param	argc	number of arg
+	\param	*argv	string table
 
-            
-  
+	\return	int
+*/
 #if defined (__GNUC__) && (__GNUC__ >= 4)
 #pragma GCC diagnostic ignored "-Wmissing-noreturn"
 #endif
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 #endif
 {
 	myargc = argc;
-	myargv = argv;  
+	myargv = argv; /// \todo pull out path to exe from this string
 
 #ifdef HAVE_TTF
 #ifdef _WIN32
@@ -189,19 +189,19 @@ int main(int argc, char **argv)
 #endif
 #endif
 
-
+	// disable text input right off the bat, since we don't need it at the start.
 	I_SetTextInputMode(false);
 
 #ifdef LOGMESSAGES
 	if (!M_CheckParm("-nolog"))
 		InitLogging();
-#endif 
+#endif/*LOGMESSAGES*/
 
-
+	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
 #if defined (_WIN32)
 	{
-#if 0  
+#if 0 // just load the DLL
 		p_IsDebuggerPresent pfnIsDebuggerPresent = (p_IsDebuggerPresent)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsDebuggerPresent");
 		if ((!pfnIsDebuggerPresent || !pfnIsDebuggerPresent())
 #ifdef BUGTRAP
@@ -218,7 +218,7 @@ int main(int argc, char **argv)
 #endif
 #endif
 
-
+	// startup SRB2
 	CONS_Printf("Setting up SRB2...\n");
 	D_SRB2Main();
 #ifdef LOGMESSAGES
@@ -226,15 +226,15 @@ int main(int argc, char **argv)
 		CONS_Printf("Logfile: %s\n", logfilename);
 #endif
 	CONS_Printf("Entering main game loop...\n");
-
+	// never return
 	D_SRB2Loop();
 
 #ifdef BUGTRAP
-
+	// This is safe even if BT didn't start.
 	ShutdownBugTrap();
 #endif
 
-
+	// return to OS
 	return 0;
 }
 #endif

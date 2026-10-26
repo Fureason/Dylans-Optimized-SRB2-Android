@@ -20,7 +20,7 @@ public class SDLAudioManager
         mAudioRecord = null;
     }
 
-
+    // Audio
 
     protected static String getAudioFormatString(int audioFormat) {
         switch (audioFormat) {
@@ -42,7 +42,7 @@ public class SDLAudioManager
 
         Log.v(TAG, "Opening " + (isCapture ? "capture" : "playback") + ", requested " + desiredFrames + " frames of " + desiredChannels + " channel " + getAudioFormatString(audioFormat) + " audio at " + sampleRate + " Hz");
 
-         
+        /* On older devices let's use known good settings */
         if (Build.VERSION.SDK_INT < 21) {
             if (desiredChannels > 2) {
                 desiredChannels = 2;
@@ -131,49 +131,49 @@ public class SDLAudioManager
                 break;
             }
 
-  
-                                                                         
+/*
+            Log.v(TAG, "Speaker configuration (and order of channels):");
 
-                                                    
-                                                        
-             
-                                                    
-                                                         
-             
-                                                    
-                                                          
-             
-                                                    
-                                                           
-             
-                                                    
-                                                       
-             
-                                                    
-                                                        
-             
-                                                    
-                                                                  
-             
-                                                    
-                                                                   
-             
-                                                    
-                                                         
-             
-                                                    
-                                                       
-             
-                                                    
-                                                        
-             
-  
+            if ((channelConfig & 0x00000004) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_FRONT_LEFT");
+            }
+            if ((channelConfig & 0x00000008) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_FRONT_RIGHT");
+            }
+            if ((channelConfig & 0x00000010) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_FRONT_CENTER");
+            }
+            if ((channelConfig & 0x00000020) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_LOW_FREQUENCY");
+            }
+            if ((channelConfig & 0x00000040) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_BACK_LEFT");
+            }
+            if ((channelConfig & 0x00000080) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_BACK_RIGHT");
+            }
+            if ((channelConfig & 0x00000100) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_FRONT_LEFT_OF_CENTER");
+            }
+            if ((channelConfig & 0x00000200) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_FRONT_RIGHT_OF_CENTER");
+            }
+            if ((channelConfig & 0x00000400) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_BACK_CENTER");
+            }
+            if ((channelConfig & 0x00000800) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_SIDE_LEFT");
+            }
+            if ((channelConfig & 0x00001000) != 0) {
+                Log.v(TAG, "   CHANNEL_OUT_SIDE_RIGHT");
+            }
+*/
         }
         frameSize = (sampleSize * desiredChannels);
 
-
-
-
+        // Let the user pick a larger buffer if they really want -- but ye
+        // gods they probably shouldn't, the minimums are horrifyingly high
+        // latency already
         int minBufferSize;
         if (isCapture) {
             minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
@@ -189,7 +189,7 @@ public class SDLAudioManager
                 mAudioRecord = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate,
                         channelConfig, audioFormat, desiredFrames * frameSize);
 
-
+                // see notes about AudioTrack state in audioOpen(), above. Probably also applies here.
                 if (mAudioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                     Log.e(TAG, "Failed during initialization of AudioRecord");
                     mAudioRecord.release();
@@ -208,11 +208,11 @@ public class SDLAudioManager
             if (mAudioTrack == null) {
                 mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelConfig, audioFormat, desiredFrames * frameSize, AudioTrack.MODE_STREAM);
 
-
-
-
+                // Instantiating AudioTrack can "succeed" without an exception and the track may still be invalid
+                // Ref: https://android.googlesource.com/platform/frameworks/base/+/refs/heads/master/media/java/android/media/AudioTrack.java
+                // Ref: http://developer.android.com/reference/android/media/AudioTrack.html#getState()
                 if (mAudioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
-                     
+                    /* Try again, with safer values */
 
                     Log.e(TAG, "Failed during initialization of Audio Track");
                     mAudioTrack.release();
@@ -234,16 +234,16 @@ public class SDLAudioManager
         return results;
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static int[] audioOpen(int sampleRate, int audioFormat, int desiredChannels, int desiredFrames) {
         return open(false, sampleRate, audioFormat, desiredChannels, desiredFrames);
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static void audioWriteFloatBuffer(float[] buffer) {
         if (mAudioTrack == null) {
             Log.e(TAG, "Attempted to make audio call with uninitialized audio!");
@@ -258,7 +258,7 @@ public class SDLAudioManager
                 try {
                     Thread.sleep(1);
                 } catch(InterruptedException e) {
-
+                    // Nom nom
                 }
             } else {
                 Log.w(TAG, "SDL audio: error return from write(float)");
@@ -267,9 +267,9 @@ public class SDLAudioManager
         }
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static void audioWriteShortBuffer(short[] buffer) {
         if (mAudioTrack == null) {
             Log.e(TAG, "Attempted to make audio call with uninitialized audio!");
@@ -284,7 +284,7 @@ public class SDLAudioManager
                 try {
                     Thread.sleep(1);
                 } catch(InterruptedException e) {
-
+                    // Nom nom
                 }
             } else {
                 Log.w(TAG, "SDL audio: error return from write(short)");
@@ -293,9 +293,9 @@ public class SDLAudioManager
         }
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static void audioWriteByteBuffer(byte[] buffer) {
         if (mAudioTrack == null) {
             Log.e(TAG, "Attempted to make audio call with uninitialized audio!");
@@ -310,7 +310,7 @@ public class SDLAudioManager
                 try {
                     Thread.sleep(1);
                 } catch(InterruptedException e) {
-
+                    // Nom nom
                 }
             } else {
                 Log.w(TAG, "SDL audio: error return from write(byte)");
@@ -319,19 +319,19 @@ public class SDLAudioManager
         }
     }
 
-       
-                                              
-       
+    /**
+     * This method is called by SDL using JNI.
+     */
     public static int[] captureOpen(int sampleRate, int audioFormat, int desiredChannels, int desiredFrames) {
         return open(true, sampleRate, audioFormat, desiredChannels, desiredFrames);
     }
 
-     
+    /** This method is called by SDL using JNI. */
     public static int captureReadFloatBuffer(float[] buffer, boolean blocking) {
         return mAudioRecord.read(buffer, 0, buffer.length, blocking ? AudioRecord.READ_BLOCKING : AudioRecord.READ_NON_BLOCKING);
     }
 
-     
+    /** This method is called by SDL using JNI. */
     public static int captureReadShortBuffer(short[] buffer, boolean blocking) {
         if (Build.VERSION.SDK_INT < 23) {
             return mAudioRecord.read(buffer, 0, buffer.length);
@@ -340,7 +340,7 @@ public class SDLAudioManager
         }
     }
 
-     
+    /** This method is called by SDL using JNI. */
     public static int captureReadByteBuffer(byte[] buffer, boolean blocking) {
         if (Build.VERSION.SDK_INT < 23) {
             return mAudioRecord.read(buffer, 0, buffer.length);
@@ -349,7 +349,7 @@ public class SDLAudioManager
         }
     }
 
-     
+    /** This method is called by SDL using JNI. */
     public static void audioClose() {
         if (mAudioTrack != null) {
             mAudioTrack.stop();
@@ -358,7 +358,7 @@ public class SDLAudioManager
         }
     }
 
-     
+    /** This method is called by SDL using JNI. */
     public static void captureClose() {
         if (mAudioRecord != null) {
             mAudioRecord.stop();
@@ -367,18 +367,18 @@ public class SDLAudioManager
         }
     }
 
-     
+    /** This method is called by SDL using JNI. */
     public static void audioSetThreadPriority(boolean iscapture, int device_id) {
         try {
 
-             
+            /* Set thread name */
             if (iscapture) {
                 Thread.currentThread().setName("SDLAudioC" + device_id);
             } else {
                 Thread.currentThread().setName("SDLAudioP" + device_id);
             }
 
-             
+            /* Set thread priority */
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
         } catch (Exception e) {

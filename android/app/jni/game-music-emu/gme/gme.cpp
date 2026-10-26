@@ -1,4 +1,4 @@
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #include "Music_Emu.h"
 
@@ -95,7 +95,7 @@ static void to_uppercase( const char* in, int len, char* out )
 		if ( !(out [i] = toupper( in [i] )) )
 			return;
 	}
-	*out = 0;  
+	*out = 0; // extension too long
 }
 
 gme_type_t gme_identify_extension( const char* extension_ )
@@ -124,7 +124,7 @@ const char *gme_type_extension( gme_type_t music_type )
 gme_err_t gme_identify_file( const char* path, gme_type_t* type_out )
 {
 	*type_out = gme_identify_extension( path );
-
+	// TODO: don't examine header if file has extension?
 	if ( !*type_out )
 	{
 		char header [4];
@@ -184,7 +184,7 @@ gme_err_t gme_open_file( const char* path, Music_Emu** out, int sample_rate )
 	Music_Emu* emu = gme_new_emu( file_type, sample_rate );
 	CHECK_ALLOC( emu );
 
-
+	// optimization: avoids seeking/re-reading header
 	Remaining_Reader rem( header, header_size, &in );
 	gme_err_t err = emu->load( rem );
 	in.close();
@@ -207,7 +207,7 @@ int gme_autoload_playback_limit( Music_Emu *const emu )
 	return emu->autoload_playback_limit();
 }
 
-
+// Used to implement gme_new_emu and gme_new_emu_multi_channel
 Music_Emu* gme_internal_new_emu_( gme_type_t type, int rate, bool multi_channel )
 {
 	if ( type )
@@ -252,13 +252,13 @@ Music_Emu* gme_internal_new_emu_( gme_type_t type, int rate, bool multi_channel 
 
 Music_Emu* gme_new_emu( gme_type_t type, int rate )
 {
-    return gme_internal_new_emu_( type, rate, false  );
+    return gme_internal_new_emu_( type, rate, false /* no multichannel */);
 }
 
 Music_Emu* gme_new_emu_multi_channel( gme_type_t type, int rate )
 {
-
-    return gme_internal_new_emu_( type, rate, true  );
+    // multi-channel emulator (if possible, not all emu types support multi-channel)
+    return gme_internal_new_emu_( type, rate, true /* multichannel */);
 }
 
 gme_err_t gme_load_file( Music_Emu* me, const char* path ) { return me->load_file( path ); }
@@ -346,9 +346,9 @@ gme_err_t gme_track_info( Music_Emu const* me, gme_info_t** out, int track )
 	info->play_length = info->length;
 	if ( info->play_length <= 0 )
 	{
-		info->play_length = info->intro_length + 2 * info->loop_length;  
+		info->play_length = info->intro_length + 2 * info->loop_length; // intro + 2 loops
 		if ( info->play_length <= 0 )
-			info->play_length = 150 * 1000;  
+			info->play_length = 150 * 1000; // 2.5 minutes
 	}
 
 	*out = info;
@@ -401,7 +401,7 @@ void      gme_set_equalizer  ( Music_Emu* me, gme_equalizer_t const* eq )
 
 void gme_equalizer( Music_Emu const* me, gme_equalizer_t* out )
 {
-	gme_equalizer_t e = gme_equalizer_t();  
+	gme_equalizer_t e = gme_equalizer_t(); // Default-init all fields to 0.0f
 	e.treble = me->equalizer().treble;
 	e.bass   = me->equalizer().bass;
 	*out = e;

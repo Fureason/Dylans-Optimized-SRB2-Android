@@ -1,4 +1,4 @@
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #include "Hes_Emu.h"
 
@@ -24,7 +24,7 @@ int const vdp_mask    = 0x02;
 int const i_flag_mask = 0x04;
 int const unmapped    = 0xFF;
 
-long const period_60hz = 262 * 455L;  
+long const period_60hz = 262 * 455L; // scanlines * clocks per scanline
 
 using std::min;
 using std::max;
@@ -56,7 +56,7 @@ void Hes_Emu::unload()
 	Music_Emu::unload();
 }
 
-
+// Track info
 
 static byte const* copy_field( byte const* in, char* out )
 {
@@ -64,19 +64,19 @@ static byte const* copy_field( byte const* in, char* out )
 	{
 		int len = 0x20;
 		if ( in [0x1F] && !in [0x2F] )
-			len = 0x30;  
+			len = 0x30; // fields are sometimes 16 bytes longer (ugh)
 		
-
-
+		// since text fields are where any data could be, detect non-text
+		// and fields with data after zero byte terminator
 		
 		int i = 0;
 		for ( i = 0; i < len && in [i]; i++ )
-			if ( ((in [i] + 1) & 0xFF) < ' ' + 1 )  
-				return 0;  
+			if ( ((in [i] + 1) & 0xFF) < ' ' + 1 ) // also treat 0xFF as non-text
+				return 0; // non-ASCII found
 		
 		for ( ; i < len; i++ )
 			if ( in [i] )
-				return 0;  
+				return 0; // data after terminator
 		
 		Gme_File::copy_field_( out, (char const*) in, len );
 		in += len;
@@ -140,7 +140,7 @@ static gme_type_t_ const gme_hes_type_ = { "PC Engine", 256, &new_hes_emu, &new_
 extern gme_type_t const gme_hes_type = &gme_hes_type_;
 
 
-
+// Setup
 
 blargg_err_t Hes_Emu::load_( Data_Reader& in )
 {
@@ -158,9 +158,9 @@ blargg_err_t Hes_Emu::load_( Data_Reader& in )
 	if ( memcmp( header_.unused, "\0\0\0\0", 4 ) )
 		set_warning( "Unknown header data" );
 	
-
-
-
+	// File spec supports multiple blocks, but I haven't found any, and
+	// many files have bad sizes in the only block, so it's simpler to
+	// just try to load the damn data as best as possible.
 	
 	long addr = get_le32( header_.addr );
 	long size = get_le32( header_.size );
@@ -202,7 +202,7 @@ void Hes_Emu::set_voice( int i, Blip_Buffer* center, Blip_Buffer* left, Blip_Buf
 	apu.osc_output( i, center, left, right );
 }
 
-
+// Emulation
 
 void Hes_Emu::recalc_timer_load()
 {
@@ -220,7 +220,7 @@ blargg_err_t Hes_Emu::start_track_( int track )
 {
 	RETURN_ERR( Classic_Emu::start_track_( track ) );
 	
-	memset( ram, 0, sizeof ram );  
+	memset( ram, 0, sizeof ram ); // some HES music relies on zero fill
 	memset( sgx, 0, sizeof sgx );
 	
 	apu.reset();
@@ -228,7 +228,7 @@ blargg_err_t Hes_Emu::start_track_( int track )
 	
 	for ( unsigned i = 0; i < sizeof header_.banks; i++ )
 		set_mmr( i, header_.banks [i] );
-	set_mmr( page_count, 0xFF );  
+	set_mmr( page_count, 0xFF ); // unmapped beyond end of address space
 	
 	irq.disables  = timer_mask | vdp_mask;
 	irq.timer     = future_hes_time;
@@ -256,7 +256,7 @@ blargg_err_t Hes_Emu::start_track_( int track )
 	return 0;
 }
 
-
+// Hardware
 
 void Hes_Emu::cpu_write_vdp( int addr, int data )
 {
@@ -292,7 +292,7 @@ void Hes_Emu::cpu_write_( hes_addr_t addr, int data )
 	if ( unsigned (addr - apu.start_addr) <= apu.end_addr - apu.start_addr )
 	{
 		GME_APU_HOOK( this, addr - apu.start_addr, data );
-
+		// avoid going way past end when a long block xfer is writing to I/O space
 		hes_time_t t = min( time(), end_time() + 8 );
 		apu.write_data( t, addr, data );
 		return;
@@ -328,7 +328,7 @@ void Hes_Emu::cpu_write_( hes_addr_t addr, int data )
 	case 0x1402:
 		run_until( time );
 		irq.disables = data;
-		if ( (data & 0xF8) && (data & 0xF8) != 0xF8 )  
+		if ( (data & 0xF8) && (data & 0xF8) != 0xF8 ) // flag questionable values
 			debug_printf( "Int mask: $%02X\n", data );
 		break;
 	
@@ -340,8 +340,8 @@ void Hes_Emu::cpu_write_( hes_addr_t addr, int data )
 		break;
 	
 #ifndef NDEBUG
-	case 0x1000:  
-	case 0x0402:  
+	case 0x1000: // I/O port
+	case 0x0402: // palette
 	case 0x0403:
 	case 0x0404:
 	case 0x0405:
@@ -376,7 +376,7 @@ int Hes_Emu::cpu_read_( hes_addr_t addr )
 		return 0;
 	
 	case 0x0C01:
-
+		//return timer.enabled; // TODO: remove?
 	case 0x0C00:
 		run_until( time );
 		debug_printf( "Timer count read\n" );
@@ -394,8 +394,8 @@ int Hes_Emu::cpu_read_( hes_addr_t addr )
 		}
 		
 	#ifndef NDEBUG
-		case 0x1000:  
-		case 0x180C:  
+		case 0x1000: // I/O port
+		case 0x180C: // CD-ROM
 		case 0x180D:
 			break;
 		
@@ -407,9 +407,9 @@ int Hes_Emu::cpu_read_( hes_addr_t addr )
 	return unmapped;
 }
 
+// see hes_cpu_io.h for core read/write functions
 
-
-
+// Emulation
 
 void Hes_Emu::run_until( hes_time_t present )
 {
@@ -467,7 +467,7 @@ int Hes_Emu::cpu_done()
 		{
 			timer.fired = true;
 			irq.timer = future_hes_time;
-			irq_changed();  
+			irq_changed(); // overkill, but not worth writing custom code
 			#if GME_FRAME_HOOK_DEFINED
 			{
 				unsigned const threshold = period_60hz / 30;
@@ -484,10 +484,10 @@ int Hes_Emu::cpu_done()
 		
 		if ( irq.vdp <= present && !(irq.disables & vdp_mask) )
 		{
-
-
-
-
+			// work around for bugs with music not acknowledging VDP
+			//run_until( present );
+			//irq.vdp = future_hes_time;
+			//irq_changed();
 			#if GME_FRAME_HOOK_DEFINED
 				last_frame_hook = present;
 				GME_FRAME_HOOK( this );
@@ -510,17 +510,17 @@ static void adjust_time( blargg_long& time, hes_time_t delta )
 
 blargg_err_t Hes_Emu::run_clocks( blip_time_t& duration_, int )
 {
-	blip_time_t const duration = duration_;  
+	blip_time_t const duration = duration_; // cache
 	
 	if ( cpu::run( duration ) )
 		set_warning( "Emulation error (illegal instruction)" );
 	
 	check( time() >= duration );
-
+	//check( time() - duration < 20 ); // Txx instruction could cause going way over
 	
 	run_until( duration );
 	
-
+	// end time frame
 	timer.last_time -= duration;
 	vdp.next_vbl    -= duration;
 	#if GME_FRAME_HOOK_DEFINED

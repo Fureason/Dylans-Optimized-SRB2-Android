@@ -9,7 +9,7 @@ import android.view.MotionEvent;
 import org.libsdl.app.SDLActivity;
 
 public class Button {
-
+    // Shared KeyMap for all buttons
 
     public float scaleX, scaleY, offsetX, offsetY, radius;
     public String name;
@@ -60,7 +60,7 @@ public class Button {
     }
 
     public void press(boolean activate, int id) {
-        if (this.inputDown == activate) return;  
+        if (this.inputDown == activate) return; // Prevent spam
         this.inputDown = activate;
         this.touchId = activate ? id : -1;
 
@@ -90,10 +90,10 @@ public class Button {
         } else if (action == MotionEvent.ACTION_MOVE) {
             if (this.touchId == id && !inside && this.inputDown) {
                 press(false, id);
-
-
+                // If it's OUR finger moving, we can check if it slid OUT (optional)
+                // For now, let's just make sure we don't react to OTHER fingers moving
             } else if (this.touchId == -1 && inside && !this.inputDown) {
-
+                // Slide-to-activate (Finger wasn't on button, but moved onto it)
                 press(true, id);
                 Log.i("TouchButton", "Pressed (SOFT): " + id);
             }

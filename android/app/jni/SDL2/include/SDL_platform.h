@@ -19,11 +19,11 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-   
-                        
-  
-                                                  
-   
+/**
+ *  \file SDL_platform.h
+ *
+ *  Try to get a standard set of platform defines.
+ */
 
 #ifndef SDL_platform_h_
 #define SDL_platform_h_
@@ -62,12 +62,12 @@
 #endif
 #if defined(ANDROID) || defined(__ANDROID__)
 #undef __ANDROID__
-#undef __LINUX__  
+#undef __LINUX__ /* do we need to do this? */
 #define __ANDROID__ 1
 #endif
 
 #if defined(__APPLE__)
- 
+/* lets us know what version of Mac OS X we're compiling on */
 #include "AvailabilityMacros.h"
 #include "TargetConditionals.h"
 #if TARGET_OS_TV
@@ -75,19 +75,19 @@
 #define __TVOS__ 1
 #endif
 #if TARGET_OS_IPHONE
- 
+/* if compiling for iOS */
 #undef __IPHONEOS__
 #define __IPHONEOS__ 1
 #undef __MACOSX__
 #else
- 
+/* if not compiling for iOS */
 #undef __MACOSX__
 #define __MACOSX__  1
 #if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
 # error SDL for Mac OS X only supports deploying on 10.6 and above.
-#endif  
-#endif  
-#endif  
+#endif /* MAC_OS_X_VERSION_MIN_REQUIRED < 1060 */
+#endif /* TARGET_OS_IPHONE */
+#endif /* defined(__APPLE__) */
 
 #if defined(__NetBSD__)
 #undef __NETBSD__
@@ -119,7 +119,7 @@
 #endif
 
 #if defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
- 
+/* Try to find out if we're compiling for WinRT or non-WinRT */
 #if defined(_MSC_VER) && defined(__has_include)
 #if __has_include(<winapifamily.h>)
 #define HAVE_WINAPIFAMILY_H 1
@@ -127,8 +127,8 @@
 #define HAVE_WINAPIFAMILY_H 0
 #endif
 
- 
-#elif defined(_MSC_VER) && (_MSC_VER >= 1700 && !_USING_V110_SDK71_)     
+/* If _USING_V110_SDK71_ is defined it means we are using the Windows XP toolset. */
+#elif defined(_MSC_VER) && (_MSC_VER >= 1700 && !_USING_V110_SDK71_)    /* _MSC_VER == 1700 for Visual Studio 2012 */
 #define HAVE_WINAPIFAMILY_H 1
 #else
 #define HAVE_WINAPIFAMILY_H 0
@@ -139,7 +139,7 @@
 #define WINAPI_FAMILY_WINRT (!WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP))
 #else
 #define WINAPI_FAMILY_WINRT 0
-#endif  
+#endif /* HAVE_WINAPIFAMILY_H */
 
 #if WINAPI_FAMILY_WINRT
 #undef __WINRT__
@@ -148,7 +148,7 @@
 #undef __WINDOWS__
 #define __WINDOWS__ 1
 #endif
-#endif  
+#endif /* defined(WIN32) || defined(_WIN32) || defined(__CYGWIN__) */
 
 #if defined(__WINDOWS__)
 #undef __WIN32__
@@ -159,9 +159,9 @@
 #define __PSP__ 1
 #endif
 
-                                                            
-                                                                                     
-   
+/* The NACL compiler defines __native_client__ and __pnacl__
+ * Ref: http://www.chromium.org/nativeclient/pnacl/stability-of-the-pnacl-bitcode-abi
+ */
 #if defined(__native_client__)
 #undef __LINUX__
 #undef __NACL__
@@ -171,7 +171,7 @@
 #undef __LINUX__
 #undef __PNACL__
 #define __PNACL__ 1
- 
+/* PNACL with newlib supports static linking only */
 #define __SDL_NOGETPROCADDR__
 #endif
 
@@ -180,33 +180,33 @@
 #endif
 
 #include "begin_code.h"
- 
+/* Set up for C function definitions, even when using C++ */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-   
-                                
-  
-                                                                          
-  
-              
-               
-            
-          
-              
-  
-                                                                         
-                                                                          
-   
+/**
+ * Get the name of the platform.
+ *
+ * Here are the names returned for some (but not all) supported platforms:
+ *
+ * - "Windows"
+ * - "Mac OS X"
+ * - "Linux"
+ * - "iOS"
+ * - "Android"
+ *
+ * \returns the name of the platform. If the correct platform name is not
+ *          available, returns a string beginning with the text "Unknown".
+ */
 extern DECLSPEC const char * SDLCALL SDL_GetPlatform (void);
 
- 
+/* Ends C function definitions when using C++ */
 #ifdef __cplusplus
 }
 #endif
 #include "close_code.h"
 
-#endif  
+#endif /* SDL_platform_h_ */
 
- 
+/* vi: set ts=4 sw=4 expandtab: */

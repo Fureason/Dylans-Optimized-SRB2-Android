@@ -7,8 +7,8 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-
-
+/// \file  ndk_crash_handler.c
+/// \brief Android crash handler
 
 #include "ndk_crash_handler.h"
 #include "jni_android.h"
@@ -120,7 +120,7 @@ void NDKCrashHandler_ReportSignal(const char *sigmsg, int signum)
 		return;
 
 #if 0
-
+	// Get the current time as a string.
 	time_t rawtime;
 	struct tm timeinfo;
 	char timestr[32];
@@ -128,26 +128,26 @@ void NDKCrashHandler_ReportSignal(const char *sigmsg, int signum)
 	localtime_r(&rawtime, &timeinfo);
 	strftime(timestr, 32, "%a, %d %b %Y %T %z", &timeinfo);
 
-
+	// Let the user know what the heck is happening
 	int fd = -1;
-	bt_write_file(fd, "------------------------\n");  
+	bt_write_file(fd, "------------------------\n"); // Nice looking seperator
 	bt_write_all(fd, "An error occurred within SRB2! Send this stack trace to someone who can help!\n");
-	if (fd != -1)  
-		bt_write_stderr("(Or find crash-log.txt in your SRB2 directory.)\n");  
+	if (fd != -1) // If the crash log exists,
+		bt_write_stderr("(Or find crash-log.txt in your SRB2 directory.)\n"); // tell the user where the crash log is.
 
-
+	// Tell the log when we crashed.
 	bt_write_file(fd, "Time of crash: ");
 	bt_write_file(fd, timestr);
 	bt_write_file(fd, "\n");
 
-
-
+	// Give the crash log the cause and a nice 'Backtrace:' thing
+	// The signal is given to the user when the parent process sees we crashed.
 	bt_write_file(fd, "Cause: ");
 	bt_write_file(fd, strsignal(signum));
-	bt_write_file(fd, "\n");  
+	bt_write_file(fd, "\n"); // Newline for the signal name
 #endif
 
-
+	// write crash info
 	NDKCrashHandler_PrintToLog(crash_log, "Application killed by signal: %d, %s\n\n", signum, sigmsg ? sigmsg : "unknown");
 	NDKCrashHandler_PrintToLog(crash_log, "Device info:\n");
 	for (i = 0; JNI_DeviceInfoReference[i].info; i++)

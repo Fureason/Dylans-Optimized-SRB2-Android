@@ -1,10 +1,10 @@
 LOCAL_PATH := $(call my-dir)
 
-
-
-
-
-
+###########################
+#
+# SDL shared library
+#
+###########################
 
 include $(CLEAR_VARS)
 
@@ -26,11 +26,11 @@ LOCAL_STATIC_LIBRARIES := cpufeatures
 
 include $(PREBUILT_SHARED_LIBRARY)
 
-
-
-
-
-
+###########################
+#
+# hidapi library
+#
+###########################
 
 include $(CLEAR_VARS)
 

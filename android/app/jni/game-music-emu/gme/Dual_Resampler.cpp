@@ -1,4 +1,4 @@
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #include "Dual_Resampler.h"
 
@@ -32,7 +32,7 @@ Dual_Resampler::~Dual_Resampler() { }
 
 blargg_err_t Dual_Resampler::reset( int pairs )
 {
-
+	// expand allocations a bit
 	RETURN_ERR( sample_buf.resize( (pairs + (pairs >> 2)) * 2 ) );
 	resize( pairs );
 	resampler_size = oversamples_per_frame + (oversamples_per_frame >> 2);
@@ -69,7 +69,7 @@ void Dual_Resampler::play_frame_( Blip_Buffer& blip_buf, dsample_t* out )
 	
 	resampler.write( new_count );
 
-#ifdef	NDEBUG  
+#ifdef	NDEBUG // Avoid warning when asserts are disabled
 	resampler.read( sample_buf.begin(), sample_buf_size );
 #else
 	long count = resampler.read( sample_buf.begin(), sample_buf_size );
@@ -82,7 +82,7 @@ void Dual_Resampler::play_frame_( Blip_Buffer& blip_buf, dsample_t* out )
 
 void Dual_Resampler::dual_play( long count, dsample_t* out, Blip_Buffer& blip_buf )
 {
-
+	// empty extra buffer
 	long remain = sample_buf_size - buf_pos;
 	if ( remain )
 	{
@@ -94,7 +94,7 @@ void Dual_Resampler::dual_play( long count, dsample_t* out, Blip_Buffer& blip_bu
 		buf_pos += remain;
 	}
 	
-
+	// entire frames
 	while ( count >= (long) sample_buf_size )
 	{
 		play_frame_( blip_buf, out );
@@ -102,7 +102,7 @@ void Dual_Resampler::dual_play( long count, dsample_t* out, Blip_Buffer& blip_bu
 		count -= sample_buf_size;
 	}
 	
-
+	// extra
 	if ( count )
 	{
 		play_frame_( blip_buf, sample_buf.begin() );

@@ -50,7 +50,7 @@ png_get_rows(png_structp png_ptr, png_infop info_ptr)
 #endif
 
 #ifdef PNG_EASY_ACCESS_SUPPORTED
- 
+/* Easy access to info, added in libpng-0.99 */
 png_uint_32 PNGAPI
 png_get_image_width(png_structp png_ptr, png_infop info_ptr)
 {
@@ -361,12 +361,12 @@ png_get_pHYs_dpi(png_structp png_ptr, png_infop info_ptr,
    }
    return (retval);
 }
-#endif  
-#endif   
+#endif /* PNG_pHYs_SUPPORTED */
+#endif  /* PNG_INCH_CONVERSIONS && PNG_FLOATING_POINT_SUPPORTED */
 
- 
+/* png_get_channels really belongs in here, too, but it's been around longer */
 
-#endif   
+#endif  /* PNG_EASY_ACCESS_SUPPORTED */
 
 png_byte PNGAPI
 png_get_channels(png_structp png_ptr, png_infop info_ptr)
@@ -532,9 +532,9 @@ png_get_iCCP(png_structp png_ptr, png_infop info_ptr,
    {
       *name = info_ptr->iccp_name;
       *profile = info_ptr->iccp_profile;
-                                                                    
-                                                          
-         
+      /* Compression_type is a dummy so the API won't have to change
+       * if we introduce multiple compression types later.
+       */
       *proflen = (int)info_ptr->iccp_proflen;
       *compression_type = (int)info_ptr->iccp_compression;
       return (PNG_INFO_iCCP);
@@ -600,11 +600,11 @@ png_get_IHDR(png_structp png_ptr, png_infop info_ptr,
    if (interlace_type != NULL)
       *interlace_type = info_ptr->interlace_type;
 
-                                                                           
-                                                                    
-                                                                     
-                           
-      
+   /* This is redundant if we can be sure that the info_ptr values were all
+    * assigned in png_set_IHDR().  We do the check anyhow in case an
+    * application has ignored our advice not to mess with the members
+    * of info_ptr directly.
+    */
    png_check_IHDR (png_ptr, info_ptr->width, info_ptr->height,
        info_ptr->bit_depth, info_ptr->color_type, info_ptr->interlace_type,
        info_ptr->compression_type, info_ptr->filter_type);
@@ -821,7 +821,7 @@ png_get_tRNS(png_structp png_ptr, png_infop info_ptr,
           if (trans_color != NULL)
              *trans_color = &(info_ptr->trans_color);
       }
-      else  
+      else /* if (info_ptr->color_type != PNG_COLOR_TYPE_PALETTE) */
       {
           if (trans_color != NULL)
           {
@@ -880,8 +880,8 @@ png_get_compression_buffer_size(png_structp png_ptr)
 
 
 #ifdef PNG_SET_USER_LIMITS_SUPPORTED
-                                                              
-                                
+/* These functions were added to libpng 1.2.6 and were enabled
+ * by default in libpng-1.4.0 */
 png_uint_32 PNGAPI
 png_get_user_width_max (png_structp png_ptr)
 {
@@ -892,22 +892,22 @@ png_get_user_height_max (png_structp png_ptr)
 {
     return (png_ptr? png_ptr->user_height_max : 0);
 }
- 
+/* This function was added to libpng 1.4.0 */
 png_uint_32 PNGAPI
 png_get_chunk_cache_max (png_structp png_ptr)
 {
     return (png_ptr? png_ptr->user_chunk_cache_max : 0);
 }
- 
+/* This function was added to libpng 1.4.1 */
 png_alloc_size_t PNGAPI
 png_get_chunk_malloc_max (png_structp png_ptr)
 {
     return (png_ptr?
        png_ptr->user_chunk_malloc_max : 0);
 }
-#endif  
+#endif /* ?PNG_SET_USER_LIMITS_SUPPORTED */
 
- 
+/* These functions were added to libpng 1.4.0 */
 #ifdef PNG_IO_STATE_SUPPORTED
 png_uint_32 PNGAPI
 png_get_io_state (png_structp png_ptr)
@@ -920,6 +920,6 @@ png_get_io_chunk_name (png_structp png_ptr)
 {
    return png_ptr->chunk_name;
 }
-#endif  
+#endif /* ?PNG_IO_STATE_SUPPORTED */
 
-#endif  
+#endif /* PNG_READ_SUPPORTED || PNG_WRITE_SUPPORTED */

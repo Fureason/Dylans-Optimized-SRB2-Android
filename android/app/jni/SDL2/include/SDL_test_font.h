@@ -19,63 +19,63 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-   
-                         
-  
-                                        
-  
-                                                                           
-   
+/**
+ *  \file SDL_test_font.h
+ *
+ *  Include file for SDL test framework.
+ *
+ *  This code is a part of the SDL2_test library, not the main SDL library.
+ */
 
 #ifndef SDL_test_font_h_
 #define SDL_test_font_h_
 
 #include "begin_code.h"
- 
+/* Set up for C function definitions, even when using C++ */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
- 
+/* Function prototypes */
 
 #define FONT_CHARACTER_SIZE  8
 
-   
-                                                   
-  
-                                            
-                                                                        
-                                                                        
-                                   
-  
-                                                 
-   
+/**
+ *  \brief Draw a string in the currently set font.
+ *
+ *  \param renderer The renderer to draw on.
+ *  \param x The X coordinate of the upper left corner of the character.
+ *  \param y The Y coordinate of the upper left corner of the character.
+ *  \param c The character to draw.
+ *
+ *  \returns Returns 0 on success, -1 on failure.
+ */
 int SDLTest_DrawCharacter(SDL_Renderer *renderer, int x, int y, char c);
 
-   
-                                                   
-  
-                                            
-                                                                     
-                                                                     
-                                
-  
-                                                 
-   
+/**
+ *  \brief Draw a string in the currently set font.
+ *
+ *  \param renderer The renderer to draw on.
+ *  \param x The X coordinate of the upper left corner of the string.
+ *  \param y The Y coordinate of the upper left corner of the string.
+ *  \param s The string to draw.
+ *
+ *  \returns Returns 0 on success, -1 on failure.
+ */
 int SDLTest_DrawString(SDL_Renderer *renderer, int x, int y, const char *s);
 
 
-   
-                                                           
-   
+/**
+ *  \brief Cleanup textures used by font drawing functions.
+ */
 void SDLTest_CleanupTextDrawing(void);
 
- 
+/* Ends C function definitions when using C++ */
 #ifdef __cplusplus
 }
 #endif
 #include "close_code.h"
 
-#endif  
+#endif /* SDL_test_font_h_ */
 
- 
+/* vi: set ts=4 sw=4 expandtab: */

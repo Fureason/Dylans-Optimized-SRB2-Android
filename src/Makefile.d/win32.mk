@@ -1,6 +1,6 @@
-
-
-
+#
+# Mingw, if you don't know, that's Win32/Win64
+#
 
 ifndef MINGW64
 EXENAME?=srb2src.exe
@@ -8,7 +8,7 @@ else
 EXENAME?=srb2src64.exe
 endif
 
-
+# disable dynamicbase if under msys2
 ifdef MSYSTEM
 libs+=-Wl,--disable-dynamicbase
 endif

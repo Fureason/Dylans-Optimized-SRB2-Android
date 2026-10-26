@@ -1,4 +1,4 @@
-
+// File_Extractor 0.4.0. http://www.slack.net/~ant/
 
 #include "Data_Reader.h"
 
@@ -25,8 +25,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA */
 #include <zlib.h>
 #include <stdlib.h>
 #include <errno.h>
-static const unsigned char gz_magic[2] = {0x1f, 0x8b};  
-#endif  
+static const unsigned char gz_magic[2] = {0x1f, 0x8b}; /* gzip magic header */
+#endif /* HAVE_ZLIB_H */
 
 using std::min;
 using std::max;
@@ -79,7 +79,7 @@ blargg_err_t File_Reader::skip( long n )
 	return seek( tell() + n );
 }
 
-
+// Subset_Reader
 
 Subset_Reader::Subset_Reader( Data_Reader* dr, long size )
 {
@@ -100,7 +100,7 @@ long Subset_Reader::read_avail( void* p, long s )
 	return in->read_avail( p, s );
 }
 
-
+// Remaining_Reader
 
 Remaining_Reader::Remaining_Reader( void const* h, long size, Data_Reader* r )
 {
@@ -150,7 +150,7 @@ blargg_err_t Remaining_Reader::read( void* out, long count )
 	return in->read( (char*) out + first, second );
 }
 
-
+// Mem_File_Reader
 
 Mem_File_Reader::Mem_File_Reader( const void* p, long s ) :
 	m_begin( (const char*) p ),
@@ -166,14 +166,14 @@ Mem_File_Reader::Mem_File_Reader( const void* p, long s ) :
 		debug_printf( "Loaded compressed data\n" );
 		m_ownedPtr = true;
 	}
-#endif  
+#endif /* HAVE_ZLIB_H */
 }
 
 #ifdef HAVE_ZLIB_H
 Mem_File_Reader::~Mem_File_Reader()
 {
 	if ( m_ownedPtr )
-		free( const_cast<char*>( m_begin ) );  
+		free( const_cast<char*>( m_begin ) ); // see gz_compress for the malloc
 }
 #endif
 
@@ -206,7 +206,7 @@ bool Mem_File_Reader::gz_decompress()
 {
 	if ( m_size >= 2 && memcmp(m_begin, gz_magic, 2) != 0 )
 	{
-		 
+		/* Don't try to decompress non-GZ files, just assign input pointer */
 		return false;
 	}
 
@@ -214,7 +214,7 @@ bool Mem_File_Reader::gz_decompress()
 	const vec_size full_length = static_cast<vec_size>( m_size );
 	const vec_size half_length = static_cast<vec_size>( m_size / 2 );
 
-
+	// We use malloc/friends here so we can realloc to grow buffer if needed
 	char *raw_data = reinterpret_cast<char *> ( malloc( full_length ) );
 	size_t raw_data_size = full_length;
 	if ( !raw_data )
@@ -229,8 +229,8 @@ bool Mem_File_Reader::gz_decompress()
 
 	bool done = false;
 
-
-
+	// Adding 16 sets bit 4, which enables zlib to auto-detect the
+	// header.
 	if ( inflateInit2(&strm, (16 + MAX_WBITS)) != Z_OK )
 	{
 		free( raw_data );
@@ -239,7 +239,7 @@ bool Mem_File_Reader::gz_decompress()
 
 	while ( !done )
 	{
-		 
+		/* If our output buffer is too small */
 		if ( strm.total_out >= raw_data_size )
 		{
 			raw_data_size += half_length;
@@ -252,7 +252,7 @@ bool Mem_File_Reader::gz_decompress()
 		strm.next_out  = reinterpret_cast<Bytef *>( raw_data + strm.total_out );
 		strm.avail_out = static_cast<uInt>( static_cast<uLong>( raw_data_size ) - strm.total_out );
 
-		 
+		/* Inflate another chunk. */
 		int err = inflate( &strm, Z_SYNC_FLUSH );
 		if ( err == Z_STREAM_END )
 			done = true;
@@ -272,10 +272,10 @@ bool Mem_File_Reader::gz_decompress()
 	return true;
 }
 
-#endif  
+#endif /* HAVE_ZLIB_H */
 
 
-
+// Callback_Reader
 
 Callback_Reader::Callback_Reader( callback_t c, long size, void* d ) :
 	callback( c ),
@@ -303,7 +303,7 @@ blargg_err_t Callback_Reader::read( void* out, long count )
 	return callback( data, out, (int) count );
 }
 
-
+// Std_File_Reader
 
 #ifdef HAVE_ZLIB_H
 
@@ -347,8 +347,8 @@ Std_File_Reader::~Std_File_Reader() { close(); }
 blargg_err_t Std_File_Reader::open( const char* path )
 {
 #ifdef HAVE_ZLIB_H
-
-
+	// zlib transparently handles uncompressed data if magic header
+	// not present but we still need to grab size
 	RETURN_ERR( get_gzip_eof( path, &size_ ) );
 	file_ = gzopen( path, "rb" );
 #else
@@ -364,7 +364,7 @@ long Std_File_Reader::size() const
 {
 #ifdef HAVE_ZLIB_H
 	if ( file_ )
-		return size_;  
+		return size_; // Set for both compressed and uncompressed modes
 #endif
 	long pos = tell();
 	fseek( (FILE*) file_, 0, SEEK_END );
@@ -385,7 +385,7 @@ long Std_File_Reader::read_avail( void* p, long s )
 	const size_t readLength = static_cast<size_t>( max( 0l, s ) );
 	const auto result = fread( p, 1, readLength, reinterpret_cast<FILE*>(file_) );
 	return static_cast<long>( result );
-#endif  
+#endif /* HAVE_ZLIB_H */
 }
 
 blargg_err_t Std_File_Reader::read( void* p, long s )

@@ -1,9 +1,9 @@
 #ifndef __gl2_h_
 #define __gl2_h_
 
- 
+/* $Revision: 20555 $ on $Date:: 2013-02-12 14:32:47 -0800 #$ */
 
- 
+/*#include <GLES2/gl2platform.h>*/
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,9 +14,9 @@ extern "C" {
  * 2.0. For details, see http://oss.sgi.com/projects/FreeB/ .
  */
 
-                                                                           
-                        
-                                                                           
+/*-------------------------------------------------------------------------
+ * Data type definitions
+ *-----------------------------------------------------------------------*/
 
 typedef void             GLvoid;
 typedef char             GLchar;
@@ -34,23 +34,23 @@ typedef khronos_float_t  GLfloat;
 typedef khronos_float_t  GLclampf;
 typedef khronos_int32_t  GLfixed;
 
- 
+/* GL types for handling large vertex buffer objects */
 typedef khronos_intptr_t GLintptr;
 typedef khronos_ssize_t  GLsizeiptr;
 
- 
+/* OpenGL ES core versions */
 #define GL_ES_VERSION_2_0                 1
 
- 
+/* ClearBufferMask */
 #define GL_DEPTH_BUFFER_BIT               0x00000100
 #define GL_STENCIL_BUFFER_BIT             0x00000400
 #define GL_COLOR_BUFFER_BIT               0x00004000
 
- 
+/* Boolean */
 #define GL_FALSE                          0
 #define GL_TRUE                           1
 
- 
+/* BeginMode */
 #define GL_POINTS                         0x0000
 #define GL_LINES                          0x0001
 #define GL_LINE_LOOP                      0x0002
@@ -59,17 +59,17 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_TRIANGLE_STRIP                 0x0005
 #define GL_TRIANGLE_FAN                   0x0006
 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+/* AlphaFunction (not supported in ES20) */
+/*      GL_NEVER */
+/*      GL_LESS */
+/*      GL_EQUAL */
+/*      GL_LEQUAL */
+/*      GL_GREATER */
+/*      GL_NOTEQUAL */
+/*      GL_GEQUAL */
+/*      GL_ALWAYS */
 
- 
+/* BlendingFactorDest */
 #define GL_ZERO                           0
 #define GL_ONE                            1
 #define GL_SRC_COLOR                      0x0300
@@ -79,28 +79,28 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_DST_ALPHA                      0x0304
 #define GL_ONE_MINUS_DST_ALPHA            0x0305
 
- 
- 
- 
+/* BlendingFactorSrc */
+/*      GL_ZERO */
+/*      GL_ONE */
 #define GL_DST_COLOR                      0x0306
 #define GL_ONE_MINUS_DST_COLOR            0x0307
 #define GL_SRC_ALPHA_SATURATE             0x0308
- 
- 
- 
- 
+/*      GL_SRC_ALPHA */
+/*      GL_ONE_MINUS_SRC_ALPHA */
+/*      GL_DST_ALPHA */
+/*      GL_ONE_MINUS_DST_ALPHA */
 
- 
+/* BlendEquationSeparate */
 #define GL_FUNC_ADD                       0x8006
 #define GL_BLEND_EQUATION                 0x8009
-#define GL_BLEND_EQUATION_RGB             0x8009     
+#define GL_BLEND_EQUATION_RGB             0x8009    /* same as BLEND_EQUATION */
 #define GL_BLEND_EQUATION_ALPHA           0x883D
 
- 
+/* BlendSubtract */
 #define GL_FUNC_SUBTRACT                  0x800A
 #define GL_FUNC_REVERSE_SUBTRACT          0x800B
 
- 
+/* Separate Blend Functions */
 #define GL_BLEND_DST_RGB                  0x80C8
 #define GL_BLEND_SRC_RGB                  0x80C9
 #define GL_BLEND_DST_ALPHA                0x80CA
@@ -111,7 +111,7 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_ONE_MINUS_CONSTANT_ALPHA       0x8004
 #define GL_BLEND_COLOR                    0x8005
 
- 
+/* Buffer Objects */
 #define GL_ARRAY_BUFFER                   0x8892
 #define GL_ELEMENT_ARRAY_BUFFER           0x8893
 #define GL_ARRAY_BUFFER_BINDING           0x8894
@@ -126,22 +126,22 @@ typedef khronos_ssize_t  GLsizeiptr;
 
 #define GL_CURRENT_VERTEX_ATTRIB          0x8626
 
- 
+/* CullFaceMode */
 #define GL_FRONT                          0x0404
 #define GL_BACK                           0x0405
 #define GL_FRONT_AND_BACK                 0x0408
 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+/* DepthFunction */
+/*      GL_NEVER */
+/*      GL_LESS */
+/*      GL_EQUAL */
+/*      GL_LEQUAL */
+/*      GL_GREATER */
+/*      GL_NOTEQUAL */
+/*      GL_GEQUAL */
+/*      GL_ALWAYS */
 
- 
+/* EnableCap */
 #define GL_TEXTURE_2D                     0x0DE1
 #define GL_CULL_FACE                      0x0B44
 #define GL_BLEND                          0x0BE2
@@ -153,18 +153,18 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_SAMPLE_ALPHA_TO_COVERAGE       0x809E
 #define GL_SAMPLE_COVERAGE                0x80A0
 
- 
+/* ErrorCode */
 #define GL_NO_ERROR                       0
 #define GL_INVALID_ENUM                   0x0500
 #define GL_INVALID_VALUE                  0x0501
 #define GL_INVALID_OPERATION              0x0502
 #define GL_OUT_OF_MEMORY                  0x0505
 
- 
+/* FrontFaceDirection */
 #define GL_CW                             0x0900
 #define GL_CCW                            0x0901
 
- 
+/* GetPName */
 #define GL_LINE_WIDTH                     0x0B21
 #define GL_ALIASED_POINT_SIZE_RANGE       0x846D
 #define GL_ALIASED_LINE_WIDTH_RANGE       0x846E
@@ -191,7 +191,7 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_STENCIL_BACK_WRITEMASK         0x8CA5
 #define GL_VIEWPORT                       0x0BA2
 #define GL_SCISSOR_BOX                    0x0C10
- 
+/*      GL_SCISSOR_TEST */
 #define GL_COLOR_CLEAR_VALUE              0x0C22
 #define GL_COLOR_WRITEMASK                0x0C23
 #define GL_UNPACK_ALIGNMENT               0x0CF5
@@ -206,7 +206,7 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_DEPTH_BITS                     0x0D56
 #define GL_STENCIL_BITS                   0x0D57
 #define GL_POLYGON_OFFSET_UNITS           0x2A00
- 
+/*      GL_POLYGON_OFFSET_FILL */
 #define GL_POLYGON_OFFSET_FACTOR          0x8038
 #define GL_TEXTURE_BINDING_2D             0x8069
 #define GL_SAMPLE_BUFFERS                 0x80A8
@@ -214,24 +214,24 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_SAMPLE_COVERAGE_VALUE          0x80AA
 #define GL_SAMPLE_COVERAGE_INVERT         0x80AB
 
- 
- 
- 
- 
- 
+/* GetTextureParameter */
+/*      GL_TEXTURE_MAG_FILTER */
+/*      GL_TEXTURE_MIN_FILTER */
+/*      GL_TEXTURE_WRAP_S */
+/*      GL_TEXTURE_WRAP_T */
 
 #define GL_NUM_COMPRESSED_TEXTURE_FORMATS 0x86A2
 #define GL_COMPRESSED_TEXTURE_FORMATS     0x86A3
 
- 
+/* HintMode */
 #define GL_DONT_CARE                      0x1100
 #define GL_FASTEST                        0x1101
 #define GL_NICEST                         0x1102
 
- 
+/* HintTarget */
 #define GL_GENERATE_MIPMAP_HINT            0x8192
 
- 
+/* DataType */
 #define GL_BYTE                           0x1400
 #define GL_UNSIGNED_BYTE                  0x1401
 #define GL_SHORT                          0x1402
@@ -241,7 +241,7 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_FLOAT                          0x1406
 #define GL_FIXED                          0x140C
 
- 
+/* PixelFormat */
 #define GL_DEPTH_COMPONENT                0x1902
 #define GL_ALPHA                          0x1906
 #define GL_RGB                            0x1907
@@ -249,13 +249,13 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_LUMINANCE                      0x1909
 #define GL_LUMINANCE_ALPHA                0x190A
 
- 
- 
+/* PixelType */
+/*      GL_UNSIGNED_BYTE */
 #define GL_UNSIGNED_SHORT_4_4_4_4         0x8033
 #define GL_UNSIGNED_SHORT_5_5_5_1         0x8034
 #define GL_UNSIGNED_SHORT_5_6_5           0x8363
 
- 
+/* Shaders */
 #define GL_FRAGMENT_SHADER                  0x8B30
 #define GL_VERTEX_SHADER                    0x8B31
 #define GL_MAX_VERTEX_ATTRIBS               0x8869
@@ -277,7 +277,7 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_SHADING_LANGUAGE_VERSION         0x8B8C
 #define GL_CURRENT_PROGRAM                  0x8B8D
 
- 
+/* StencilFunction */
 #define GL_NEVER                          0x0200
 #define GL_LESS                           0x0201
 #define GL_EQUAL                          0x0202
@@ -287,8 +287,8 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_GEQUAL                         0x0206
 #define GL_ALWAYS                         0x0207
 
- 
- 
+/* StencilOp */
+/*      GL_ZERO */
 #define GL_KEEP                           0x1E00
 #define GL_REPLACE                        0x1E01
 #define GL_INCR                           0x1E02
@@ -297,32 +297,32 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_INCR_WRAP                      0x8507
 #define GL_DECR_WRAP                      0x8508
 
- 
+/* StringName */
 #define GL_VENDOR                         0x1F00
 #define GL_RENDERER                       0x1F01
 #define GL_VERSION                        0x1F02
 #define GL_EXTENSIONS                     0x1F03
 
- 
+/* TextureMagFilter */
 #define GL_NEAREST                        0x2600
 #define GL_LINEAR                         0x2601
 
- 
- 
- 
+/* TextureMinFilter */
+/*      GL_NEAREST */
+/*      GL_LINEAR */
 #define GL_NEAREST_MIPMAP_NEAREST         0x2700
 #define GL_LINEAR_MIPMAP_NEAREST          0x2701
 #define GL_NEAREST_MIPMAP_LINEAR          0x2702
 #define GL_LINEAR_MIPMAP_LINEAR           0x2703
 
- 
+/* TextureParameterName */
 #define GL_TEXTURE_MAG_FILTER             0x2800
 #define GL_TEXTURE_MIN_FILTER             0x2801
 #define GL_TEXTURE_WRAP_S                 0x2802
 #define GL_TEXTURE_WRAP_T                 0x2803
 
- 
- 
+/* TextureTarget */
+/*      GL_TEXTURE_2D */
 #define GL_TEXTURE                        0x1702
 
 #define GL_TEXTURE_CUBE_MAP               0x8513
@@ -335,7 +335,7 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_TEXTURE_CUBE_MAP_NEGATIVE_Z    0x851A
 #define GL_MAX_CUBE_MAP_TEXTURE_SIZE      0x851C
 
- 
+/* TextureUnit */
 #define GL_TEXTURE0                       0x84C0
 #define GL_TEXTURE1                       0x84C1
 #define GL_TEXTURE2                       0x84C2
@@ -370,12 +370,12 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_TEXTURE31                      0x84DF
 #define GL_ACTIVE_TEXTURE                 0x84E0
 
- 
+/* TextureWrapMode */
 #define GL_REPEAT                         0x2901
 #define GL_CLAMP_TO_EDGE                  0x812F
 #define GL_MIRRORED_REPEAT                0x8370
 
- 
+/* Uniform Types */
 #define GL_FLOAT_VEC2                     0x8B50
 #define GL_FLOAT_VEC3                     0x8B51
 #define GL_FLOAT_VEC4                     0x8B52
@@ -392,7 +392,7 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_SAMPLER_2D                     0x8B5E
 #define GL_SAMPLER_CUBE                   0x8B60
 
- 
+/* Vertex Arrays */
 #define GL_VERTEX_ATTRIB_ARRAY_ENABLED        0x8622
 #define GL_VERTEX_ATTRIB_ARRAY_SIZE           0x8623
 #define GL_VERTEX_ATTRIB_ARRAY_STRIDE         0x8624
@@ -401,21 +401,21 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_VERTEX_ATTRIB_ARRAY_POINTER        0x8645
 #define GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING 0x889F
 
- 
+/* Read Format */
 #define GL_IMPLEMENTATION_COLOR_READ_TYPE   0x8B9A
 #define GL_IMPLEMENTATION_COLOR_READ_FORMAT 0x8B9B
 
- 
+/* Shader Source */
 #define GL_COMPILE_STATUS                 0x8B81
 #define GL_INFO_LOG_LENGTH                0x8B84
 #define GL_SHADER_SOURCE_LENGTH           0x8B88
 #define GL_SHADER_COMPILER                0x8DFA
 
- 
+/* Shader Binary */
 #define GL_SHADER_BINARY_FORMATS          0x8DF8
 #define GL_NUM_SHADER_BINARY_FORMATS      0x8DF9
 
- 
+/* Shader Precision-Specified Types */
 #define GL_LOW_FLOAT                      0x8DF0
 #define GL_MEDIUM_FLOAT                   0x8DF1
 #define GL_HIGH_FLOAT                     0x8DF2
@@ -423,7 +423,7 @@ typedef khronos_ssize_t  GLsizeiptr;
 #define GL_MEDIUM_INT                     0x8DF4
 #define GL_HIGH_INT                       0x8DF5
 
- 
+/* Framebuffer Object. */
 #define GL_FRAMEBUFFER                    0x8D40
 #define GL_RENDERBUFFER                   0x8D41
 
@@ -466,9 +466,9 @@ typedef khronos_ssize_t  GLsizeiptr;
 
 #define GL_INVALID_FRAMEBUFFER_OPERATION  0x0506
 
-                                                                           
-                     
-                                                                           
+/*-------------------------------------------------------------------------
+ * GL core functions.
+ *-----------------------------------------------------------------------*/
 
 GL_APICALL void         GL_APIENTRY glActiveTexture (GLenum texture);
 GL_APICALL void         GL_APIENTRY glAttachShader (GLuint program, GLuint shader);
@@ -617,5 +617,5 @@ GL_APICALL void         GL_APIENTRY glViewport (GLint x, GLint y, GLsizei width,
 }
 #endif
 
-#endif  
+#endif /* __gl2_h_ */
 

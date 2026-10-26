@@ -16,18 +16,18 @@
 #include "png.h"
 #include "pngpriv.h"
 
- 
+/* Generate a compiler error if there is an old png.h in the search path. */
 typedef version_1_4_1 Your_png_h_is_not_version_1_4_1;
 
-                                                                      
-                           
-   
+/* Version information for C files.  This had better match the version
+ * string defined in png.h.
+ */
 
-                                                                        
-                                                                       
-                                                                          
-                                                                
-   
+/* Tells libpng that we have already handled the first "num_bytes" bytes
+ * of the PNG file signature.  If the PNG data is embedded into another
+ * stream we can set num_bytes = 8 so that libpng will not attempt to read
+ * or write any of the magic bytes before it starts on the IHDR.
+ */
 
 #ifdef PNG_READ_SUPPORTED
 void PNGAPI
@@ -44,14 +44,14 @@ png_set_sig_bytes(png_structp png_ptr, int num_bytes)
    png_ptr->sig_bytes = (png_byte)(num_bytes < 0 ? 0 : num_bytes);
 }
 
-                                                                       
-                                                                       
-                                                                        
-                                                                     
-                                                                        
-                                                                          
-                                                                     
-   
+/* Checks whether the supplied bytes match the PNG signature.  We allow
+ * checking less than the full 8-byte signature so that those apps that
+ * already read the first few bytes of a file to determine the file type
+ * can simply check the remaining bytes for extra assurance.  Returns
+ * an integer less than, equal to, or greater than zero if sig is found,
+ * respectively, to be less than, to match, or be greater than the correct
+ * PNG signature (this is the same behaviour as strcmp, memcmp, etc).
+ */
 int PNGAPI
 png_sig_cmp(png_bytep sig, png_size_t start, png_size_t num_to_check)
 {
@@ -70,11 +70,11 @@ png_sig_cmp(png_bytep sig, png_size_t start, png_size_t num_to_check)
    return ((int)(png_memcmp(&sig[start], &png_signature[start], num_to_check)));
 }
 
-#endif  
+#endif /* PNG_READ_SUPPORTED */
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
- 
-voidpf  
+/* Function to allocate memory for zlib and clear it to 0. */
+voidpf /* PRIVATE */
 png_zalloc(voidpf png_ptr, uInt items, uInt size)
 {
    png_voidp ptr;
@@ -98,39 +98,39 @@ png_zalloc(voidpf png_ptr, uInt items, uInt size)
    return ((voidpf)ptr);
 }
 
- 
-void  
+/* Function to free memory for zlib */
+void /* PRIVATE */
 png_zfree(voidpf png_ptr, voidpf ptr)
 {
    png_free((png_structp)png_ptr, (png_voidp)ptr);
 }
 
-                                                                
-                                                    
-   
-void  
+/* Reset the CRC variable to 32 bits of 1's.  Care must be taken
+ * in case CRC is > 32 bits to leave the top bits 0.
+ */
+void /* PRIVATE */
 png_reset_crc(png_structp png_ptr)
 {
    png_ptr->crc = crc32(0, Z_NULL, 0);
 }
 
-                                                                 
-                                                                   
-                                                                      
-                             
-   
-void  
+/* Calculate the CRC over a section of data.  We can only pass as
+ * much data to this routine as the largest single buffer size.  We
+ * also check that this data will actually be used before going to the
+ * trouble of calculating it.
+ */
+void /* PRIVATE */
 png_calculate_crc(png_structp png_ptr, png_bytep ptr, png_size_t length)
 {
    int need_crc = 1;
 
-   if (png_ptr->chunk_name[0] & 0x20)                      
+   if (png_ptr->chunk_name[0] & 0x20)                     /* ancillary */
    {
       if ((png_ptr->flags & PNG_FLAG_CRC_ANCILLARY_MASK) ==
           (PNG_FLAG_CRC_ANCILLARY_USE | PNG_FLAG_CRC_ANCILLARY_NOWARN))
          need_crc = 0;
    }
-   else                                                     
+   else                                                    /* critical */
    {
       if (png_ptr->flags & PNG_FLAG_CRC_CRITICAL_IGNORE)
          need_crc = 0;
@@ -140,12 +140,12 @@ png_calculate_crc(png_structp png_ptr, png_bytep ptr, png_size_t length)
       png_ptr->crc = crc32(png_ptr->crc, ptr, (uInt)length);
 }
 
-                                                                        
-                                                                     
-                                                                         
-                                                                     
-                                                               
-   
+/* Allocate the memory for an info_struct for the application.  We don't
+ * really need the png_ptr, but it could potentially be useful in the
+ * future.  This should be used in favour of malloc(png_sizeof(png_info))
+ * and png_info_init() so that applications that want to use a shared
+ * libpng don't have to be recompiled if png_info changes size.
+ */
 png_infop PNGAPI
 png_create_info_struct(png_structp png_ptr)
 {
@@ -168,11 +168,11 @@ png_create_info_struct(png_structp png_ptr)
    return (info_ptr);
 }
 
-                                                                       
-                                                              
-                                                                     
-                                
-   
+/* This function frees the memory associated with a single info struct.
+ * Normally, one would use either png_destroy_read_struct() or
+ * png_destroy_write_struct() to free an info struct, but this may be
+ * useful for some applications.
+ */
 void PNGAPI
 png_destroy_info_struct(png_structp png_ptr, png_infopp info_ptr_ptr)
 {
@@ -200,10 +200,10 @@ png_destroy_info_struct(png_structp png_ptr, png_infopp info_ptr_ptr)
    }
 }
 
-                                                                          
-                                                                      
-           
-   
+/* Initialize the info structure.  This is now an internal function (0.89)
+ * and applications using it are urged to use png_create_info_struct()
+ * instead.
+ */
 
 void PNGAPI
 png_info_init_3(png_infopp ptr_ptr, png_size_t png_info_struct_size)
@@ -222,7 +222,7 @@ png_info_init_3(png_infopp ptr_ptr, png_size_t png_info_struct_size)
       *ptr_ptr = info_ptr;
    }
 
-    
+   /* Set everything to 0 */
    png_memset(info_ptr, 0, png_sizeof(png_info));
 }
 
@@ -254,7 +254,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
       return;
 
 #ifdef PNG_TEXT_SUPPORTED
-    
+   /* Free text item num or (if num == -1) all text items */
    if ((mask & PNG_FREE_TEXT) & info_ptr->free_me)
    {
       if (num != -1)
@@ -278,7 +278,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
 #endif
 
 #ifdef PNG_tRNS_SUPPORTED
-    
+   /* Free any tRNS entry */
    if ((mask & PNG_FREE_TRNS) & info_ptr->free_me)
    {
       png_free(png_ptr, info_ptr->trans_alpha);
@@ -288,7 +288,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
 #endif
 
 #ifdef PNG_sCAL_SUPPORTED
-    
+   /* Free any sCAL entry */
    if ((mask & PNG_FREE_SCAL) & info_ptr->free_me)
    {
 #if defined(PNG_FIXED_POINT_SUPPORTED) && !defined(PNG_FLOATING_POINT_SUPPORTED)
@@ -302,7 +302,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
 #endif
 
 #ifdef PNG_pCAL_SUPPORTED
-    
+   /* Free any pCAL entry */
    if ((mask & PNG_FREE_PCAL) & info_ptr->free_me)
    {
       png_free(png_ptr, info_ptr->pcal_purpose);
@@ -325,7 +325,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
 #endif
 
 #ifdef PNG_iCCP_SUPPORTED
-    
+   /* Free any iCCP entry */
    if ((mask & PNG_FREE_ICCP) & info_ptr->free_me)
    {
       png_free(png_ptr, info_ptr->iccp_name);
@@ -337,7 +337,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
 #endif
 
 #ifdef PNG_sPLT_SUPPORTED
-    
+   /* Free a given sPLT entry, or (if num == -1) all sPLT entries */
    if ((mask & PNG_FREE_SPLT) & info_ptr->free_me)
    {
       if (num != -1)
@@ -402,7 +402,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
 #endif
 
 #ifdef PNG_hIST_SUPPORTED
-    
+   /* Free any hIST entry */
    if ((mask & PNG_FREE_HIST)  & info_ptr->free_me)
    {
       png_free(png_ptr, info_ptr->hist);
@@ -411,7 +411,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
    }
 #endif
 
-    
+   /* Free any PLTE entry that was internally allocated */
    if ((mask & PNG_FREE_PLTE) & info_ptr->free_me)
    {
       png_zfree(png_ptr, info_ptr->palette);
@@ -421,7 +421,7 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
    }
 
 #ifdef PNG_INFO_IMAGE_SUPPORTED
-    
+   /* Free any image bits attached to the info structure */
    if ((mask & PNG_FREE_ROWS) & info_ptr->free_me)
    {
       if (info_ptr->row_pointers)
@@ -445,11 +445,11 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
       info_ptr->free_me &= ~(mask & ~PNG_FREE_MUL);
 }
 
-                                                                         
-                                                                       
-                                                   
-   
-void  
+/* This is an internal routine to free any memory that the info struct is
+ * pointing to before re-using it or freeing the struct itself.  Recall
+ * that png_free() checks for NULL pointers for us.
+ */
+void /* PRIVATE */
 png_info_destroy(png_structp png_ptr, png_infop info_ptr)
 {
    png_debug(1, "in png_info_destroy");
@@ -467,12 +467,12 @@ png_info_destroy(png_structp png_ptr, png_infop info_ptr)
 
    png_info_init_3(&info_ptr, png_sizeof(png_info));
 }
-#endif  
+#endif /* defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED) */
 
-                                                                         
-                                                                          
-                                                                       
-   
+/* This function returns a pointer to the io_ptr associated with the user
+ * functions.  The application should free any memory associated with this
+ * pointer before png_write_destroy() or png_read_destroy() are called.
+ */
 png_voidp PNGAPI
 png_get_io_ptr(png_structp png_ptr)
 {
@@ -483,12 +483,12 @@ png_get_io_ptr(png_structp png_ptr)
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
 #ifdef PNG_STDIO_SUPPORTED
-                                                                          
-                                                                             
-                                                                       
-                                                                           
-                         
-   
+/* Initialize the default input/output functions for the PNG file.  If you
+ * use your own read or write routines, you can call either png_set_read_fn()
+ * or png_set_write_fn() instead of png_init_io().  If you have defined
+ * PNG_NO_STDIO, you must use a function of your own because "FILE *" isn't
+ * necessarily available.
+ */
 void PNGAPI
 png_init_io(png_structp png_ptr, png_FILE_p fp)
 {
@@ -502,9 +502,9 @@ png_init_io(png_structp png_ptr, png_FILE_p fp)
 #endif
 
 #ifdef PNG_TIME_RFC1123_SUPPORTED
-                                                                        
-                                                     
-   
+/* Convert the supplied time into an RFC 1123 string suitable for use in
+ * a "Creation Time" or other text-based time string.
+ */
 png_charp PNGAPI
 png_convert_to_rfc1123(png_structp png_ptr, png_timep ptime)
 {
@@ -538,14 +538,14 @@ png_convert_to_rfc1123(png_structp png_ptr, png_timep ptime)
 #endif
    return ((png_charp)png_ptr->time_buffer);
 }
-#endif  
+#endif /* PNG_TIME_RFC1123_SUPPORTED */
 
-#endif  
+#endif /* defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED) */
 
 png_charp PNGAPI
 png_get_copyright(png_structp png_ptr)
 {
-   png_ptr = png_ptr;   
+   png_ptr = png_ptr;  /* Silence compiler warning about unused png_ptr */
 #ifdef PNG_STRING_COPYRIGHT
       return PNG_STRING_COPYRIGHT
 #else
@@ -565,35 +565,35 @@ png_get_copyright(png_structp png_ptr)
 #endif
 }
 
-                                                                    
-                                                                    
-                                                                     
-                       
-                                                                    
-                                                                    
-                                                                 
-   
+/* The following return the library version as a short string in the
+ * format 1.0.0 through 99.99.99zz.  To get the version of *.h files
+ * used with your application, print out PNG_LIBPNG_VER_STRING, which
+ * is defined in png.h.
+ * Note: now there is no difference between png_get_libpng_ver() and
+ * png_get_header_ver().  Due to the version_nn_nn_nn typedef guard,
+ * it is guaranteed that png.c uses the correct version of png.h.
+ */
 png_charp PNGAPI
 png_get_libpng_ver(png_structp png_ptr)
 {
-    
-   png_ptr = png_ptr;   
+   /* Version of *.c files used when building libpng */
+   png_ptr = png_ptr;  /* Silence compiler warning about unused png_ptr */
    return ((png_charp) PNG_LIBPNG_VER_STRING);
 }
 
 png_charp PNGAPI
 png_get_header_ver(png_structp png_ptr)
 {
-    
-   png_ptr = png_ptr;   
+   /* Version of *.h files used when building libpng */
+   png_ptr = png_ptr;  /* Silence compiler warning about unused png_ptr */
    return ((png_charp) PNG_LIBPNG_VER_STRING);
 }
 
 png_charp PNGAPI
 png_get_header_version(png_structp png_ptr)
 {
-    
-   png_ptr = png_ptr;   
+   /* Returns longer string containing both version and date */
+   png_ptr = png_ptr;  /* Silence compiler warning about unused png_ptr */
 #ifdef __STDC__
    return ((png_charp) PNG_HEADER_VERSION_STRING
 #ifndef PNG_READ_SUPPORTED
@@ -610,7 +610,7 @@ png_get_header_version(png_structp png_ptr)
 int PNGAPI
 png_handle_as_unknown(png_structp png_ptr, png_bytep chunk_name)
 {
-    
+   /* Check chunk_name and return "keep" value if it's on the list, else 0 */
    int i;
    png_bytep p;
    if (png_ptr == NULL || chunk_name == NULL || png_ptr->num_chunk_list<=0)
@@ -623,7 +623,7 @@ png_handle_as_unknown(png_structp png_ptr, png_bytep chunk_name)
 }
 #endif
 
- 
+/* This function, added to libpng-1.0.6g, is untested. */
 int PNGAPI
 png_reset_zstream(png_structp png_ptr)
 {
@@ -631,13 +631,13 @@ png_reset_zstream(png_structp png_ptr)
       return Z_STREAM_ERROR;
    return (inflateReset(&png_ptr->zstream));
 }
-#endif  
+#endif /* defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED) */
 
- 
+/* This function was added to libpng-1.0.7 */
 png_uint_32 PNGAPI
 png_access_version_number(void)
 {
-    
+   /* Version of *.c files used when building libpng */
    return((png_uint_32) PNG_LIBPNG_VER);
 }
 
@@ -645,37 +645,37 @@ png_access_version_number(void)
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
 #ifdef PNG_SIZE_T
- 
+/* Added at libpng version 1.2.6 */
    PNG_EXTERN png_size_t PNGAPI png_convert_size PNGARG((size_t size));
 png_size_t PNGAPI
 png_convert_size(size_t size)
 {
    if (size > (png_size_t)-1)
-      PNG_ABORT();   
+      PNG_ABORT();  /* We haven't got access to png_ptr, so no png_error() */
    return ((png_size_t)size);
 }
-#endif  
+#endif /* PNG_SIZE_T */
 
- 
+/* Added at libpng version 1.2.34 and 1.4.0 (moved from pngset.c) */
 #ifdef PNG_cHRM_SUPPORTED
 #ifdef PNG_CHECK_cHRM_SUPPORTED
 
-  
-                                                          
-                                                                
-  
-                       
-                       
-                       
-                        
-                       
-  
-                                                            
-                                                              
-                                           
-  
+/*
+ *    Multiply two 32-bit numbers, V1 and V2, using 32-bit
+ *    arithmetic, to produce a 64 bit result in the HI/LO words.
+ *
+ *                  A B
+ *                x C D
+ *               ------
+ *              AD || BD
+ *        AC || CB || 0
+ *
+ *    where A and B are the high and low 16-bit words of V1,
+ *    C and D are the 16-bit words of V2, AD is the product of
+ *    A and D, and X || Y is (X << 16) + Y.
+*/
 
-void  
+void /* PRIVATE */
 png_64bit_product (long v1, long v2, unsigned long *hi_product,
    unsigned long *lo_product)
 {
@@ -687,20 +687,20 @@ png_64bit_product (long v1, long v2, unsigned long *hi_product,
    c = (v2 >> 16) & 0xffff;
    d = v2 & 0xffff;
 
-   lo = b * d;                    
-   x = a * d + c * b;             
+   lo = b * d;                   /* BD */
+   x = a * d + c * b;            /* AD + CB */
    y = ((lo >> 16) & 0xffff) + x;
 
    lo = (lo & 0xffff) | ((y & 0xffff) << 16);
    hi = (y >> 16) & 0xffff;
 
-   hi += a * c;                   
+   hi += a * c;                  /* AC */
 
    *hi_product = (unsigned long)hi;
    *lo_product = (unsigned long)lo;
 }
 
-int  
+int /* PRIVATE */
 png_check_cHRM_fixed(png_structp png_ptr,
    png_fixed_point white_x, png_fixed_point white_y, png_fixed_point red_x,
    png_fixed_point red_y, png_fixed_point green_x, png_fixed_point green_y,
@@ -769,10 +769,10 @@ png_check_cHRM_fixed(png_structp png_ptr,
 
    return ret;
 }
-#endif  
-#endif  
+#endif /* PNG_CHECK_cHRM_SUPPORTED */
+#endif /* PNG_cHRM_SUPPORTED */
 
-void  
+void /* PRIVATE */
 png_check_IHDR(png_structp png_ptr,
    png_uint_32 width, png_uint_32 height, int bit_depth,
    int color_type, int interlace_type, int compression_type,
@@ -780,7 +780,7 @@ png_check_IHDR(png_structp png_ptr,
 {
    int error = 0;
 
-    
+   /* Check for width and height valid values */
    if (width == 0)
    {
       png_warning(png_ptr, "Image width is zero in IHDR");
@@ -826,14 +826,14 @@ png_check_IHDR(png_structp png_ptr,
    }
 
    if ( width > (PNG_UINT_32_MAX
-                 >> 3)       
-                 - 64        
-                 - 1         
-                 - 7*8       
-                 - 8)        
+                 >> 3)      /* 8-byte RGBA pixels */
+                 - 64       /* bigrowbuf hack */
+                 - 1        /* filter byte */
+                 - 7*8      /* rounding of width to multiple of 8 pixels */
+                 - 8)       /* extra max_pixel_depth pad */
       png_warning(png_ptr, "Width is too large for libpng to process pixels");
 
-    
+   /* Check other values */
    if (bit_depth != 1 && bit_depth != 2 && bit_depth != 4 &&
        bit_depth != 8 && bit_depth != 16)
    {
@@ -870,15 +870,15 @@ png_check_IHDR(png_structp png_ptr,
    }
 
 #ifdef PNG_MNG_FEATURES_SUPPORTED
-                                                               
-                                                                
-                                                                        
-                                                                          
-                                                                        
-                                            
-                                    
-                                      
-      
+   /* Accept filter_method 64 (intrapixel differencing) only if
+    * 1. Libpng was compiled with PNG_MNG_FEATURES_SUPPORTED and
+    * 2. Libpng did not read a PNG signature (this filter_method is only
+    *    used in PNG datastreams that are embedded in MNG datastreams) and
+    * 3. The application called png_permit_mng_features with a mask that
+    *    included PNG_FLAG_MNG_FILTER_64 and
+    * 4. The filter_method is 64 and
+    * 5. The color_type is RGB or RGBA
+    */
    if ((png_ptr->mode & PNG_HAVE_PNG_SIGNATURE) &&
        png_ptr->mng_features_permitted)
       png_warning(png_ptr, "MNG features are not allowed in a PNG datastream");
@@ -913,4 +913,4 @@ png_check_IHDR(png_structp png_ptr,
    if (error == 1)
       png_error(png_ptr, "Invalid IHDR data");
 }
-#endif  
+#endif /* defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED) */

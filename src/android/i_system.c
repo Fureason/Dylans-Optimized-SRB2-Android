@@ -20,18 +20,18 @@ UINT8 graphics_started = 0;
 
 UINT8 keyboard_started = 0;
 
-static INT64 start_time;  
+static INT64 start_time; // as microseconds since the epoch
 
-
-
+// I should probably return how much memory is remaining
+// for this process, considering Android's process memory limit.
 size_t I_GetFreeMem(size_t *total)
 {
-
-   
-   
-   
-   
-   
+  // what the heck?  sysinfo() is partially missing in bionic?
+  /* struct sysinfo si; */
+  /* if(sysinfo(&si) != 0) { */
+  /*   I_Error("Couldn't invoke sysinfo()...?"); */
+  /* } */
+  /* return si.freeram; */
   char buf[1024];
   char *memTag;
   UINT32 freeKBytes;
@@ -45,7 +45,7 @@ size_t I_GetFreeMem(size_t *total)
 
   if (n < 0)
     {
-
+      // Error
       *total = 0L;
       return 0;
     }
@@ -53,7 +53,7 @@ size_t I_GetFreeMem(size_t *total)
   buf[n] = '\0';
   if (NULL == (memTag = strstr(buf, MEMTOTAL)))
     {
-
+      // Error
       *total = 0L;
       return 0;
     }
@@ -63,7 +63,7 @@ size_t I_GetFreeMem(size_t *total)
 
   if (NULL == (memTag = strstr(buf, MEMFREE)))
     {
-
+      // Error
       *total = 0L;
       return 0;
     }
@@ -278,7 +278,7 @@ char *I_ClipboardPaste(void)
 
 void I_RegisterSysCommands(void) {}
 
-
+// This is identical to the SDL implementation.
 size_t I_GetRandomBytes(char *destination, size_t count)
 {
   FILE *rndsource;

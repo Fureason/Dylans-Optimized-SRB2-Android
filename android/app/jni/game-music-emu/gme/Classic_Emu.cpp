@@ -1,4 +1,4 @@
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #include "Classic_Emu.h"
 
@@ -24,7 +24,7 @@ Classic_Emu::Classic_Emu()
 	stereo_buffer = 0;
 	voice_types   = 0;
 	
-
+	// avoid inconsistency in our duplicated constants
 	assert( (int) wave_type  == (int) Multi_Buffer::wave_type );
 	assert( (int) noise_type == (int) Multi_Buffer::noise_type );
 	assert( (int) mixed_type == (int) Multi_Buffer::mixed_type );
@@ -73,7 +73,7 @@ void Classic_Emu::mute_voices_( int mask )
 		{
 			Multi_Buffer::channel_t ch = buf->channel( i, (voice_types ? voice_types [i] : 0) );
 			assert( (ch.center && ch.left && ch.right) ||
-					(!ch.center && !ch.left && !ch.right) );  
+					(!ch.center && !ch.left && !ch.right) ); // all or nothing
 			set_voice( i, ch.center, ch.left, ch.right );
 		}
 	}
@@ -124,7 +124,7 @@ blargg_err_t Classic_Emu::play_( long count, sample_t* out )
 	return 0;
 }
 
-
+// Rom_Data
 
 blargg_err_t Rom_Data_::load_rom_data_( Data_Reader& in,
 		int header_size, void* header_out, int fill, long pad_size )
@@ -137,7 +137,7 @@ blargg_err_t Rom_Data_::load_rom_data_( Data_Reader& in,
 	rom.clear();
 	
 	file_size_ = in.remain();
-	if ( file_size_ <= header_size )  
+	if ( file_size_ <= header_size ) // <= because there must be data after header
 		return gme_wrong_file_type;
 	blargg_err_t err = rom.resize( file_offset + file_size_ + pad_size );
 	if ( !err )
@@ -178,7 +178,7 @@ void Rom_Data_::set_addr_( long addr, int unit )
 	if ( addr < 0 )
 		addr = 0;
 	size_ = rounded;
-	if ( rom.resize( rounded - rom_addr + pad_extra ) ) { }  
+	if ( rom.resize( rounded - rom_addr + pad_extra ) ) { } // OK if shrink fails
 
 	if ( 0 )
 	{

@@ -7,16 +7,16 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-
-
+/// \file  jni_android.c
+/// \brief Android JNI functions
 
 #include "jni_android.h"
 #include "SDL.h"
-#include "../../../../src/screen.h"  
-#include "../../../../src/w_wad.h"  
-#include "../../../../src/z_zone.h"  
+#include "../../../../src/screen.h" // lol
+#include "../../../../src/w_wad.h" // 2nd lol
+#include "../../../../src/z_zone.h" // 3rd lol
 #include "../../../../src/lua_script.h"
-#include "../../../../src/netcode/d_clisrv.h"  
+#include "../../../../src/netcode/d_clisrv.h" // romoney5: for kickreason_t..
 #include "../../../../src/lua_hook.h"
 #include "../../../../src/lua_libs.h"
 
@@ -120,8 +120,8 @@ static JNIEnv *JNI_GetEnv(void)
 	context = (*env)->CallStaticObjectMethod(env, activityClass, method); \
 }
 
-
-
+// Lactozilla: Portions from SDL2
+// https://github.com/libsdl-org/SDL/blob/main/src/core/android/SDL_android.c
 
 static int s_active = 0;
 struct LocalReferenceHolder
@@ -170,7 +170,7 @@ static int LocalReferenceHolder_IsActive(void)
 const char *JNI_SharedStorage = NULL;
 boolean JNI_StoragePermission = false;
 
-
+// Implementation of getExternalStorageDirectory.
 char *JNI_GetStorageDirectory(void)
 {
 	static char *storageDir = NULL;
@@ -201,7 +201,7 @@ char *JNI_GetStorageDirectory(void)
 			return NULL;
 		}
 
-
+		// fileObject = environment.getExternalStorageDirectory();
 		fileObject = (*env)->CallStaticObjectMethod(env, envClass, method);
 		if (!fileObject)
 		{
@@ -209,7 +209,7 @@ char *JNI_GetStorageDirectory(void)
 			return NULL;
 		}
 
-
+		// pathString = fileObject.getAbsolutePath();
 		method = (*env)->GetMethodID(env, (*env)->GetObjectClass(env, fileObject), "getAbsolutePath", "()Ljava/lang/String;");
 		pathString = (jstring)(*env)->CallObjectMethod(env, fileObject, method);
 
@@ -224,7 +224,7 @@ char *JNI_GetStorageDirectory(void)
 	return storageDir;
 }
 
-
+// Get path to removable storage
 static char *JNI_RemovableStorage = NULL;
 char *JNI_RemovableStoragePath(void)
 {
@@ -256,7 +256,7 @@ char *JNI_RemovableStoragePath(void)
 		return NULL;
 	}
 
-
+	// fileObject = context.getExternalFilesDirs();
 	fileObject = (*env)->CallObjectMethod(env, context, method, NULL);
 	if (!fileObject)
 	{
@@ -265,7 +265,7 @@ char *JNI_RemovableStoragePath(void)
 		return NULL;
 	}
 
-	pathArray = (jobjectArray)fileObject;  
+	pathArray = (jobjectArray)fileObject; // Cast to array.
 	arraySize = (jsize)(*env)->GetArrayLength(env, pathArray);
 	if (arraySize < 2)
 	{
@@ -274,7 +274,7 @@ char *JNI_RemovableStoragePath(void)
 		return NULL;
 	}
 
-
+	// Get second file object.
 	fileObject = (jobject)(*env)->GetObjectArrayElement(env, pathArray, 1);
 	if (fileObject == NULL)
 	{
@@ -283,7 +283,7 @@ char *JNI_RemovableStoragePath(void)
 		return NULL;
 	}
 
-
+	// pathString = fileObject.getAbsolutePath();
 	method = (*env)->GetMethodID(env, (*env)->GetObjectClass(env, fileObject), "getAbsolutePath", "()Ljava/lang/String;");
 	if (!method)
 	{
@@ -307,8 +307,8 @@ char *JNI_RemovableStoragePath(void)
 	return JNI_RemovableStorage;
 }
 
-
-
+// Get device info
+// https://developer.android.com/reference/android/os/Build.html
 char *JNI_GetDeviceInfo(const char *info)
 {
 	LOCALREF
@@ -336,7 +336,7 @@ char *JNI_GetDeviceInfo(const char *info)
 	return deviceInfo;
 }
 
-
+// https://developer.android.com/ndk/guides/abis
 void JNI_SetupABIList(void)
 {
 	LOCALREF
@@ -601,7 +601,7 @@ int JNI_SetLetterboxBorder(const char *name)
 	if (env)
 	{
 		jclass srb2GameClass = (*env)->FindClass(env, "org/stjr/srb2/SRB2Game");
-
+		// Update method signature to (Ljava/lang/String;[B)V
 		jmethodID mid = (*env)->GetStaticMethodID(env, srb2GameClass, "updateBorderImage", "(Ljava/lang/String;[B)V");
 		if (mid)
 		{

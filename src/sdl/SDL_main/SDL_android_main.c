@@ -7,14 +7,14 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-
-
+/// \file  SDL_android_main.c
+/// \brief Android entry point
 
 #include "SDL.h"
 #include "SDL_main.h"
 #include "SDL_config.h"
 
-#include "time.h"  
+#include "time.h" // For log timestamps
 
 #include <jni_android.h>
 
@@ -23,7 +23,7 @@
 #include "../../doomdef.h"
 #include "../../m_argv.h"
 #include "../../d_main.h"
-#include "../../m_misc.h"  
+#include "../../m_misc.h" /* path shit */
 #include "../../i_system.h"
 
 #ifdef SPLASH_SCREEN
@@ -145,11 +145,11 @@ static int Android_EventFilter(void *userdata, SDL_Event *event)
     {
         case SDL_APP_LOWMEMORY:
         case SDL_APP_TERMINATING:
-
+            // TODO
             return 0;
-
-
-
+            // WILLENTERBACKGROUND and WILLENTERFOREGROUND are not handled here,
+            // since Android doesn't seem to care if they happen too late.
+            // DIDENTERBACKGROUND and DIDENTERFOREGROUND aren't handled at all
         default:
             break;
     }
@@ -167,25 +167,25 @@ int main(int argc, char* argv[])
 	myargc = argc;
 	myargv = argv;
 
-
+	// Obtain the activity class before doing anything else...
 	JNI_Startup();
 
-
+	// Starts threads, setups signal handlers, and initializes SDL...
 	I_OutputMsg("I_StartupSystem()...\n");
 	I_StartupSystem();
 
-
+	// Initialize video early...
 	Impl_InitVideoSubSystem();
 
-
+	// Add an event filter, since SDL_APP_* events need one.
 	SDL_SetEventFilter(Android_EventFilter, NULL);
 
-
+	// Init shared storage...
 	if (StorageInit())
-		StorageCheckPermission();  
+		StorageCheckPermission(); // Check storage permissions
 
 #ifdef LOGMESSAGES
-
+	// Start logging...
 	if (logging && I_StoragePermission())
 		InitLogging();
 #endif
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 		CONS_Printf("Logfile: %s\n", logfilename);
 #endif
 
-
+	// Begin the normal game setup and loop.
 	CONS_Printf("Setting up SRB2...\n");
 	D_SRB2Main();
 

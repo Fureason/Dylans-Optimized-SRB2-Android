@@ -1,4 +1,4 @@
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #include "Spc_Emu.h"
 
@@ -23,7 +23,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA */
 using std::min;
 using std::max;
 
-
+// TODO: support Spc_Filter's bass
 
 Spc_Emu::Spc_Emu()
 {
@@ -39,7 +39,7 @@ Spc_Emu::Spc_Emu()
 
 Spc_Emu::~Spc_Emu() { }
 
-
+// Track info
 
 long const trailer_offset = 0x10200;
 
@@ -49,7 +49,7 @@ long Spc_Emu::trailer_size() const { return max( 0L, file_size - trailer_offset 
 
 static void get_spc_xid6( byte const* begin, long size, track_info_t* out )
 {
-
+	// header
 	byte const* end = begin + size;
 	if ( size < 8 || memcmp( begin, "xid6", 4 ) )
 	{
@@ -71,7 +71,7 @@ static void get_spc_xid6( byte const* begin, long size, track_info_t* out )
 	
 	while ( end - in >= 4 )
 	{
-
+		// header
 		int id   = in [0];
 		int data = in [3] * 0x100 + in [2];
 		int type = in [1];
@@ -80,10 +80,10 @@ static void get_spc_xid6( byte const* begin, long size, track_info_t* out )
 		if ( len > end - in )
 		{
 			check( false );
-			break;  
+			break; // block goes past end of data
 		}
 		
-
+		// handle specific block types
 		char* field = 0;
 		switch ( id )
 		{
@@ -94,23 +94,23 @@ static void get_spc_xid6( byte const* begin, long size, track_info_t* out )
 			case 0x07: field = out->comment; break;
 			case 0x14: year = data;          break;
 			
-
-
-			  
-             
-                      
-                   
-     
-                                             
-                           
-      
-                                                  
-                         
-                               
-      
-     
-          
-     
+			//case 0x30: // intro length
+			// Many SPCs have intro length set wrong for looped tracks, making it useless
+			/*
+			case 0x30:
+				check( len == 4 );
+				if ( len >= 4 )
+				{
+					out->intro_length = get_le32( in ) / 64;
+					if ( out->length > 0 )
+					{
+						long loop = out->length - out->intro_length;
+						if ( loop >= 2000 )
+							out->loop_length = loop;
+					}
+				}
+				break;
+			*/
 			
 			case 0x13:
 				copyright_len = min( len, (int) sizeof copyright - year_len );
@@ -129,16 +129,16 @@ static void get_spc_xid6( byte const* begin, long size, track_info_t* out )
 			Gme_File::copy_field_( field, (char const*) in, len );
 		}
 		
-
+		// skip to next block
 		in += len;
 		
-
+		// blocks are supposed to be 4-byte aligned with zero-padding...
 		byte const* unaligned = in;
 		while ( (in - begin) & 3 && in < end )
 		{
 			if ( *in++ != 0 )
 			{
-
+				// ...but some files have no padding
 				in = unaligned;
 				debug_printf( "SPC info tag wasn't properly padded to align\n" );
 				break;
@@ -166,15 +166,15 @@ static void get_spc_xid6( byte const* begin, long size, track_info_t* out )
 static void get_spc_info( Spc_Emu::header_t const& h, byte const* xid6, long xid6_size,
 		track_info_t* out )
 {
-
+	// decode length (can be in text or binary format, sometimes ambiguous ugh)
 	long len_secs = 0;
 	for ( int i = 0; i < 3; i++ )
 	{
 		unsigned n = h.len_secs [i] - '0';
 		if ( n > 9 )
 		{
-
-
+			// ignore single-digit text lengths
+			// (except if author field is present and begins at offset 1, ugh)
 			if ( i == 1 && (h.author [0] || !h.author [1]) )
 				len_secs = 0;
 			break;
@@ -251,7 +251,7 @@ static gme_type_t_ const gme_spc_type_ = { "Super Nintendo", 1, &new_spc_emu, &n
 extern gme_type_t const gme_spc_type = &gme_spc_type_;
 
 
-
+// Setup
 
 blargg_err_t Spc_Emu::set_sample_rate_( long sample_rate )
 {
@@ -288,7 +288,7 @@ blargg_err_t Spc_Emu::load_mem_( byte const* in, long size )
 	return check_spc_header( in );
 }
 
-
+// Emulation
 
 void Spc_Emu::set_tempo_( double t )
 {
@@ -306,7 +306,7 @@ blargg_err_t Spc_Emu::start_track_( int track )
 	track_info_t spc_info;
 	RETURN_ERR( track_info_( &spc_info, track ) );
 
-
+	// Set a default track length, need a non-zero fadeout
 	if ( autoload_playback_limit() && ( spc_info.length > 0 ) )
 		set_fade ( spc_info.length, 50 );
 	return 0;
@@ -327,7 +327,7 @@ blargg_err_t Spc_Emu::skip_( long count )
 		count -= resampler.skip_input( count );
 	}
 	
-
+	// TODO: shouldn't skip be adjusted for the 64 samples read afterwards?
 	
 	if ( count > 0 )
 	{
@@ -335,7 +335,7 @@ blargg_err_t Spc_Emu::skip_( long count )
 		filter.clear();
 	}
 	
-
+	// eliminate pop due to resampler
 	const int resampler_latency = 64;
 	sample_t buf [resampler_latency];
 	return play_( resampler_latency, buf );

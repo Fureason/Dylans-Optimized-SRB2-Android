@@ -14,11 +14,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //-----------------------------------------------------------------------------
-
-
-
-
-
+/// \file
+/// \brief Graphical Alerts for MacOSX
+///
+///	Shows alerts, since we can't just print these to the screen when
+///	launched graphically on a mac.
 
 #ifdef __APPLE_CC__
 

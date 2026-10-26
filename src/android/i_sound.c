@@ -20,9 +20,9 @@ boolean I_StartMovieAudioCapture(const char *filename){(void)filename; return fa
 void I_UpdateMovieAudioCapture(void){}
 void I_StopMovieAudioCapture(void){}
 
-
-
-
+//
+//  SFX I/O
+//
 
 INT32 I_StartSound(sfxenum_t id, INT32 vol, INT32 sep, INT32 pitch, INT32 priority, INT32 channel)
 {
@@ -59,9 +59,9 @@ void I_SetSfxVolume(INT32 volume)
         (void)volume;
 }
 
-
-
-
+/// ------------------------
+//  MUSIC SYSTEM
+/// ------------------------
 
 UINT8 music_started = 0;
 UINT8 digmusic_started = 0;
@@ -70,9 +70,9 @@ void I_InitMusic(void){}
 
 void I_ShutdownMusic(void){}
 
-
-
-
+/// ------------------------
+//  MUSIC PROPERTIES
+/// ------------------------
 
 musictype_t I_SongType(void)
 {
@@ -89,9 +89,9 @@ boolean I_SongPaused(void)
 	return false;
 }
 
-
-
-
+/// ------------------------
+//  MUSIC EFFECTS
+/// ------------------------
 
 boolean I_SetSongSpeed(float speed)
 {
@@ -99,9 +99,9 @@ boolean I_SetSongSpeed(float speed)
         return false;
 }
 
-
-
-
+/// ------------------------
+//  MUSIC SEEKING
+/// ------------------------
 
 UINT32 I_GetSongLength(void)
 {
@@ -130,9 +130,9 @@ UINT32 I_GetSongPosition(void)
         return 0;
 }
 
-
-
-
+/// ------------------------
+//  MUSIC PLAYBACK
+/// ------------------------
 
 UINT8 midimusic_started = 0;
 
@@ -175,9 +175,9 @@ void I_SetMusicVolume(INT32 volume)
         (void)volume;
 }
 
-
-
-
+/// ------------------------
+//  MUSIC FADING
+/// ------------------------
 
 void I_SetInternalMusicVolume(UINT8 volume)
 {

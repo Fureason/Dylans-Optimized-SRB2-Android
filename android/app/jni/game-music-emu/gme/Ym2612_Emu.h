@@ -1,6 +1,6 @@
+// YM2612 FM sound chip emulator interface
 
-
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #ifdef VGM_YM2612_GENS // LGPL v2.1+ license
 #include "Ym2612_GENS.h"

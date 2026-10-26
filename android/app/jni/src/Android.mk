@@ -6,7 +6,7 @@ ANDROID := 1
 
 LOCAL_MODULE := main
 
-
+# Paths
 
 SRB2_PATH := ../../../..
 
@@ -27,9 +27,9 @@ endif
 MAKE_DIR := $(LOCAL_PATH)/$(SRC_MAIN)/Makefile.d
 XTRA_MAKE_DIR := $(LOCAL_PATH)/$(SRC_XTRA)/Makefile.d
 
+# Compile flags
 
-
-
+# SRB2's Android hardware renderer uses OpenGL ES 1.1 fixed-function calls.
 LOCAL_CFLAGS += -DUNIXCOMMON -DLINUX \
 				-DHAVE_SDL -DHAVE_MIXER -DHAVE_MIXERX \
 				-DHWRENDER -DNOTHAVE_GLES -DNOTHAVE_GLES2 \
@@ -41,7 +41,7 @@ LOCAL_CFLAGS += -DUNIXCOMMON -DLINUX \
 				-DNONX86 -DNOASM -DNOMUMBLE \
 				-DLUA_ANDROID
 
-
+# Includes
 
 include $(MAKE_DIR)/platform.mk
 include $(MAKE_DIR)/util.mk
@@ -52,11 +52,11 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH) \
 	$(LOCAL_PATH)/$(SRC_MINIUPNPC)/include/miniupnpc \
 	$(LOCAL_PATH)/$(SRC_MINIUPNPC)/src
 
-
+# Source files
 
 LOCAL_SRC_FILES := $(call List,$(LOCAL_PATH)/$(SRC_JNI)/Sourcefile)
-
-
+# LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_APK)/Sourcefile)
+# LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_XTRA)/Sourcefile)
 LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_MAIN)/Sourcefile)
 LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_MAIN)/blua/Sourcefile)
 LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_MAIN)/netcode/Sourcefile)
@@ -64,8 +64,8 @@ LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_HWR)/Sourcefile)
 LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_SDL)/Sourcefile)
 
 LOCAL_SRC_FILES += $(SRC_SDL)/SDL_main/SDL_android_main.c $(SRC_SDL)/mixer_sound.c $(SRC_SDL)/i_threads.c
-
-
+# ogl_sdl.c is normally supplied by the desktop makefile. The Android NDK
+# build consumes Sourcefile lists directly, so include the SDL GL bridge here.
 LOCAL_SRC_FILES += $(SRC_SDL)/ogl_sdl.c
 LOCAL_SRC_FILES += $(SRC_MAIN)/comptime.c $(SRC_MAIN)/md5.c
 LOCAL_SRC_FILES += $(SRC_MINIUPNPC)/src/igd_desc_parse.c \
@@ -83,11 +83,11 @@ LOCAL_SRC_FILES += $(SRC_MINIUPNPC)/src/igd_desc_parse.c \
 	$(SRC_MINIUPNPC)/src/receivedata.c \
 	$(SRC_MINIUPNPC)/src/addr_is_reserved.c
 
-
+# Libraries
 
 LOCAL_SHARED_LIBRARIES := SDL2 hidapi \
 	SDL2_mixer libmpg123 \
-	libpng  
+	libpng #libgme
 LOCAL_STATIC_LIBRARIES := libcurl
 LOCAL_LDLIBS := -lGLESv1_CM -lEGL -llog -lz
 

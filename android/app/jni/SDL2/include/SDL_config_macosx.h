@@ -25,10 +25,10 @@
 
 #include "SDL_platform.h"
 
- 
+/* This gets us MAC_OS_X_VERSION_MIN_REQUIRED... */
 #include <AvailabilityMacros.h>
 
- 
+/* This is a set of defines to configure the SDL features */
 
 #ifdef __LP64__
     #define SIZEOF_VOIDP 8
@@ -36,7 +36,7 @@
     #define SIZEOF_VOIDP 4
 #endif
 
- 
+/* Useful headers */
 #define STDC_HEADERS    1
 #define HAVE_ALLOCA_H       1
 #define HAVE_CTYPE_H    1
@@ -51,7 +51,7 @@
 #define HAVE_SYS_TYPES_H    1
 #define HAVE_LIBUNWIND_H    1
 
- 
+/* C library functions */
 #define HAVE_MALLOC 1
 #define HAVE_CALLOC 1
 #define HAVE_REALLOC    1
@@ -139,36 +139,36 @@
 
 #define HAVE_GCC_ATOMICS 1
 
- 
+/* Enable various audio drivers */
 #define SDL_AUDIO_DRIVER_COREAUDIO  1
 #define SDL_AUDIO_DRIVER_DISK   1
 #define SDL_AUDIO_DRIVER_DUMMY  1
 
- 
+/* Enable various input drivers */
 #define SDL_JOYSTICK_HIDAPI 1
 #define SDL_JOYSTICK_IOKIT  1
 #define SDL_JOYSTICK_VIRTUAL    1
 #define SDL_HAPTIC_IOKIT    1
 
- 
+/* The MFI controller support requires ARC Objective C runtime */
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1080 && !defined(__i386__)
 #define SDL_JOYSTICK_MFI 1
 #endif
 
- 
+/* Enable the dummy sensor driver */
 #define SDL_SENSOR_DUMMY  1
 
- 
+/* Enable various shared object loading systems */
 #define SDL_LOADSO_DLOPEN   1
 
- 
+/* Enable various threading systems */
 #define SDL_THREAD_PTHREAD  1
 #define SDL_THREAD_PTHREAD_RECURSIVE_MUTEX  1
 
- 
+/* Enable various timer systems */
 #define SDL_TIMER_UNIX  1
 
- 
+/* Enable various video drivers */
 #define SDL_VIDEO_DRIVER_COCOA  1
 #define SDL_VIDEO_DRIVER_DUMMY  1
 #undef SDL_VIDEO_DRIVER_X11
@@ -188,11 +188,11 @@
 #define SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM 1
 
 #ifdef MAC_OS_X_VERSION_10_8
-  
-                                                                              
-                                                                           
-                       
-   
+/*
+ * No matter the versions targeted, this is the 10.8 or later SDK, so you have
+ *  to use the external Xquartz, which is a more modern Xlib. Previous SDKs
+ *  used an older Xlib.
+ */
 #define SDL_VIDEO_DRIVER_X11_XINPUT2 1
 #define SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS 1
 #define SDL_VIDEO_DRIVER_X11_CONST_PARAM_XEXTADDDISPLAY 1
@@ -206,7 +206,7 @@
 #define SDL_VIDEO_RENDER_OGL_ES2 1
 #endif
 
- 
+/* Metal only supported on 64-bit architectures with 10.11+ */
 #if TARGET_RT_64_BIT && (MAC_OS_X_VERSION_MAX_ALLOWED >= 101100)
 #define SDL_PLATFORM_SUPPORTS_METAL    1
 #else
@@ -221,7 +221,7 @@
 #endif
 #endif
 
- 
+/* Enable OpenGL support */
 #ifndef SDL_VIDEO_OPENGL
 #define SDL_VIDEO_OPENGL    1
 #endif
@@ -238,7 +238,7 @@
 #define SDL_VIDEO_OPENGL_GLX    1
 #endif
 
- 
+/* Enable Vulkan and Metal support */
 #ifndef SDL_VIDEO_VULKAN
 #if SDL_PLATFORM_SUPPORTS_METAL
 #define SDL_VIDEO_VULKAN 1
@@ -255,16 +255,16 @@
 #endif
 #endif
 
- 
+/* Enable system power support */
 #define SDL_POWER_MACOSX 1
 
- 
+/* enable filesystem support */
 #define SDL_FILESYSTEM_COCOA   1
 
- 
+/* Enable assembly routines */
 #define SDL_ASSEMBLY_ROUTINES   1
 #ifdef __ppc__
 #define SDL_ALTIVEC_BLITTERS    1
 #endif
 
-#endif  
+#endif /* SDL_config_macosx_h_ */

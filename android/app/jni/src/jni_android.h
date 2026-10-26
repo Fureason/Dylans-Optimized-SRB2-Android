@@ -7,8 +7,8 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-
-
+/// \file  jni_android.h
+/// \brief Android JNI functions
 
 #ifndef __JNI_ANDROID_H__
 #define __JNI_ANDROID_H__

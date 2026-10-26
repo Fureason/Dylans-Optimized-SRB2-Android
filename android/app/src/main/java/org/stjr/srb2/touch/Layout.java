@@ -6,7 +6,7 @@ import android.graphics.Paint;
 public abstract class Layout {
     protected Button[] buttons;
 
-
+    // Every scheme will define its own buttons in the constructor
     public Layout() {}
 
     public void draw(Canvas canvas, Paint paint, Paint pressedPaint, Paint textPaint) {

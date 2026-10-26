@@ -9,7 +9,7 @@ void OSX_GetResourcesPath(char * buffer)
     mainBundle = CFBundleGetMainBundle();
     if (mainBundle)
     {
-        const int BUF_SIZE = 256;  
+        const int BUF_SIZE = 256; // because we somehow always know that
 
         CFURLRef appUrlRef = CFBundleCopyBundleURL(mainBundle);
         CFStringRef macPath;

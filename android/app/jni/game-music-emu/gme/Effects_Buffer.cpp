@@ -1,4 +1,4 @@
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #include "Effects_Buffer.h"
 
@@ -32,11 +32,11 @@ using std::max;
 
 const unsigned echo_size = 4096;
 const unsigned echo_mask = echo_size - 1;
-BOOST_STATIC_ASSERT( (echo_size & echo_mask) == 0 );  
+BOOST_STATIC_ASSERT( (echo_size & echo_mask) == 0 ); // must be power of 2
 
 const unsigned reverb_size = 8192 * 2;
 const unsigned reverb_mask = reverb_size - 1;
-BOOST_STATIC_ASSERT( (reverb_size & reverb_mask) == 0 );  
+BOOST_STATIC_ASSERT( (reverb_size & reverb_mask) == 0 ); // must be power of 2
 
 Effects_Buffer::config_t::config_t()
 {
@@ -59,7 +59,7 @@ void Effects_Buffer::set_depth( double d )
 	c.reverb_delay      = 880 * 0.1f;
 	c.echo_delay        = 610 * 0.1f;
 	if ( f > 0.5 )
-		f = 0.5;  
+		f = 0.5; // TODO: more linear reduction of extreme reverb/echo
 	c.reverb_level      = 0.5f * f;
 	c.echo_level        = 0.30f * f;
 	c.delay_variance    = 180 * 0.1f;
@@ -74,7 +74,7 @@ Effects_Buffer::Effects_Buffer( int num_voices, bool center_only )
 	, chan_types(max_voices * chan_types_count)
 	, stereo_remain(0)
 	, effect_remain(0)
-
+	// TODO: Reorder buf_count to be initialized before bufs to factor out channel sizing
 	, buf_count(max_voices * (center_only ? (max_buf_count - 4) : max_buf_count))
 	, effects_enabled(false)
 	, reverb_buf(max_voices, std::vector<blip_sample_t>(reverb_size))
@@ -162,9 +162,9 @@ void Effects_Buffer::config( const config_t& cfg )
 {
 	channels_changed();
 	
-
-
-
+	// clear echo and reverb buffers
+	// ensure the echo/reverb buffers have already been allocated, so this method can be
+	// called before set_sample_rate is called
 	if ( !config_.effects_enabled && cfg.effects_enabled && echo_buf[0].size() )
 	{
 		for(int i=0; i<max_voices; i++)
@@ -178,7 +178,7 @@ void Effects_Buffer::config( const config_t& cfg )
 	
 	if ( config_.effects_enabled )
 	{
-
+		// convert to internal format
 		
 		chans.pan_1_levels [0] = TO_FIXED( 1 ) - TO_FIXED( config_.pan_1 );
 		chans.pan_1_levels [1] = TO_FIXED( 2 ) - chans.pan_1_levels [0];
@@ -223,7 +223,7 @@ void Effects_Buffer::config( const config_t& cfg )
 	{
 		for(int i=0; i<max_voices; i++)
 		{
-
+			// set up outputs
 			for ( int j = 0; j < chan_types_count; j++ )
 			{
 				channel_t& c = chan_types [i*chan_types_count+j];
@@ -234,7 +234,7 @@ void Effects_Buffer::config( const config_t& cfg )
 		}
 	}
 	
-	if ( buf_count < max_buf_count )  
+	if ( buf_count < max_buf_count ) // if center_only
 	{
 		for(int i=0; i<max_voices; i++)
 		{
@@ -270,9 +270,9 @@ void Effects_Buffer::end_frame( blip_time_t clock_count )
 	int stereo_mask = (config_.effects_enabled ? 0x78 : 0x06);
 
 	const int buf_count_per_voice = buf_count/max_voices;
-	for ( int v = 0; v < max_voices; v++ )  
+	for ( int v = 0; v < max_voices; v++ ) // foreach voice
 	{
-		for ( int i = 0; i < buf_count_per_voice; i++)  
+		for ( int i = 0; i < buf_count_per_voice; i++) // foreach buffer of that voice
 		{
 			bufs_used |= bufs [v*buf_count_per_voice + i].clear_modified() << i;
 			bufs [v*buf_count_per_voice + i].end_frame( clock_count );
@@ -298,7 +298,7 @@ long Effects_Buffer::read_samples( blip_sample_t* out, long total_samples )
 	const int n_channels = max_voices * 2;
 	const int buf_count_per_voice = buf_count/max_voices;
 
-	require( total_samples % n_channels == 0 );  
+	require( total_samples % n_channels == 0 ); // as many items needed to fill at least one frame
 
 	long remain = bufs [0].samples_avail();
 	total_samples = remain = min( remain, total_samples/n_channels );
@@ -308,7 +308,7 @@ long Effects_Buffer::read_samples( blip_sample_t* out, long total_samples )
 		int active_bufs = buf_count_per_voice;
 		long count = remain;
 		
-
+		// optimizing mixing to skip any channels which had nothing added
 		if ( effect_remain )
 		{
 			if ( count > effect_remain )
@@ -346,16 +346,16 @@ long Effects_Buffer::read_samples( blip_sample_t* out, long total_samples )
 		if ( effect_remain < 0 )
 			effect_remain = 0;
 		
-
-
-
-		for ( int v = 0; v < max_voices; v++ )  
+		// skip the output from any buffers that didn't contribute to the sound output
+		// during this frame (e.g. if we only render mono then only the very first buf
+		// is 'active')
+		for ( int v = 0; v < max_voices; v++ ) // foreach voice
 		{
-			for ( int i = 0; i < buf_count_per_voice; i++)  
+			for ( int i = 0; i < buf_count_per_voice; i++) // foreach buffer of that voice
 			{
 				if ( i < active_bufs )
 					bufs [v*buf_count_per_voice + i].remove_samples( count );
-				else  
+				else // keep time synchronized
 					bufs [v*buf_count_per_voice + i].remove_silence( count );
 			}
 		}
@@ -372,7 +372,7 @@ void Effects_Buffer::mix_mono( blip_sample_t* out_, blargg_long count )
 	int const bass = BLIP_READER_BASS( bufs [i*max_buf_count+0] );
 	BLIP_READER_BEGIN( c, bufs [i*max_buf_count+0] );
 	
-
+	// unrolled loop
 	for ( blargg_long n = count >> 1; n; --n )
 	{
 		blargg_long cs0 = BLIP_READER_READ( c );

@@ -1,4 +1,4 @@
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #include "Vgm_Emu.h"
 
@@ -131,12 +131,12 @@ blip_time_t Vgm_Emu_Impl::run_commands( vgm_time_t end_time )
 	
 	while ( vgm_time < end_time && pos < data_end )
 	{
-
-
+		// TODO: be sure there are enough bytes left in stream for particular command
+		// so we don't read past end
 		switch ( *pos++ )
 		{
 		case cmd_end:
-			pos = loop_begin;  
+			pos = loop_begin; // if not looped, loop_begin == data_end
 			break;
 		
 		case cmd_delay_735:
@@ -279,7 +279,7 @@ blip_time_t Vgm_Emu_Impl::run_commands( vgm_time_t end_time )
 
 int Vgm_Emu_Impl::play_frame( blip_time_t blip_time, int sample_count, sample_t* buf )
 {
-
+	// to do: timing is working mostly by luck
 	
 	int min_pairs = sample_count >> 1;
 	int vgm_time = ((long) min_pairs << fm_time_bits) / fm_time_factor - 1;
@@ -287,7 +287,7 @@ int Vgm_Emu_Impl::play_frame( blip_time_t blip_time, int sample_count, sample_t*
 	int pairs = min_pairs;
 	while ( (pairs = to_fm_time( vgm_time )) < min_pairs )
 		vgm_time++;
-
+	//debug_printf( "pairs: %d, min_pairs: %d\n", pairs, min_pairs );
 	
 	if ( ym2612[0].enabled() )
 	{
@@ -326,7 +326,7 @@ int Vgm_Emu_Impl::play_frame( blip_time_t blip_time, int sample_count, sample_t*
 	return pairs * stereo;
 }
 
-
+// Update pre-1.10 header FM rates by scanning commands
 void Vgm_Emu_Impl::update_fm_rates( long* ym2413_rate, long* ym2612_rate ) const
 {
 	byte const* p = data + 0x40;

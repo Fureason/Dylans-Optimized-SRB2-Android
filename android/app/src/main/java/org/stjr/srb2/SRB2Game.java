@@ -57,7 +57,7 @@ public class SRB2Game extends SDLActivity {
 	private static LruCache<String, Bitmap> borderCache;
 
 	static {
-
+		// Use 1/8th of available memory for the cache
 		final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
 		final int cacheSize = maxMemory / 8;
 
@@ -75,11 +75,11 @@ public class SRB2Game extends SDLActivity {
 			public void run() {
 				if (gameBorder == null) return;
 
-
+				// Check cache first
 				Bitmap bitmap = borderCache.get(name);
 
 				if (bitmap == null && data != null) {
-
+					// Not in cache, decode it
 					bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 					if (bitmap != null) {
 						borderCache.put(name, bitmap);
@@ -95,11 +95,11 @@ public class SRB2Game extends SDLActivity {
 			public void run() {
 				if (gameBorder == null) return;
 
-
+				// Check cache first
 				Bitmap bitmap = borderCache.get(name);
 
 				if (bitmap == null && data != null) {
-
+					// Not in cache, decode it
 					bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 					if (bitmap != null) {
 						borderCache.put(name, bitmap);
@@ -164,8 +164,8 @@ public class SRB2Game extends SDLActivity {
 		if (screenW == 0 || screenH == 0 || width == 0 || height == 0)
 			return;
 
-
-
+		// Android presents both renderers across the complete native surface.
+		// Keep the decorative border from covering the stretched side regions.
 		Rect hole = new Rect(0, 0, screenW, screenH);
 
 		if (gameBorder != null) {
@@ -234,8 +234,8 @@ public class SRB2Game extends SDLActivity {
 					throw new IOException("Could not install " + destination.getName());
 			}
 
-			                                                                 
-                                                                
+			/* Keep the HTTPS trust bundle in private app storage. The native
+			 * libcurl cannot use Android's Java trust store directly. */
 			File certificate = new File(getFilesDir(), MASTER_SERVER_CERTIFICATE);
 			if (!certificate.isFile() || certificate.length() != MASTER_SERVER_CERTIFICATE_SIZE) {
 				File temporary = new File(getFilesDir(), MASTER_SERVER_CERTIFICATE + ".tmp");
@@ -291,9 +291,9 @@ public class SRB2Game extends SDLActivity {
 			return;
 		}
 
-
-
-
+		// The game is stretched across the complete Android surface, so there is
+		// no unused side area to decorate. Starting with the old border bitmap
+		// briefly exposed that artwork before the first SDL frame was ready.
 		gameBorder = new Border(this, null, new Rect(0, 0, 0, 0));
 		masterTouchClass = new MasterControls(this, "FakeNothing");
 

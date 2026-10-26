@@ -49,7 +49,7 @@ public class Joystick extends Button {
         right.setAutoRepeat(enabled);
     }
 
-
+    // TODO: make spacing NOT add onto radius. this sucks ass and causes inconsistencies with layout making
     @Override
     public boolean isPointInside(float x, float y, int w, int h) {
         float[] pos = getXYPosition(w, h);
@@ -58,7 +58,7 @@ public class Joystick extends Button {
 
     @Override
     public void press(boolean activate, int id) {
-
+        // this doesnt actually register presses, this is only for unsticking the buttons when changed via lua
         if (activate) return;
 
         this.touchId = -1;

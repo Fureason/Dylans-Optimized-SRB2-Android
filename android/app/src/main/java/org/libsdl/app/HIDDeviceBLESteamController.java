@@ -15,7 +15,7 @@ import android.os.Looper;
 import android.util.Log;
 import android.os.*;
 
-
+//import com.android.internal.util.HexDump;
 
 import java.lang.Runnable;
 import java.util.Arrays;
@@ -76,13 +76,13 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
         }
 
         public void run() {
-
+            // This is executed in main thread
             BluetoothGattCharacteristic chr;
 
             switch (mOp) {
                 case CHR_READ:
                     chr = getCharacteristic(mUuid);
-
+                    //Log.v(TAG, "Reading characteristic " + chr.getUuid());
                     if (!mGatt.readCharacteristic(chr)) {
                         Log.e(TAG, "Unable to read characteristic " + mUuid.toString());
                         mResult = false;
@@ -92,7 +92,7 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
                     break;
                 case CHR_WRITE:
                     chr = getCharacteristic(mUuid);
-
+                    //Log.v(TAG, "Writing characteristic " + chr.getUuid() + " value=" + HexDump.toHexString(value));
                     chr.setValue(mValue);
                     if (!mGatt.writeCharacteristic(chr)) {
                         Log.e(TAG, "Unable to write characteristic " + mUuid.toString());
@@ -103,7 +103,7 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
                     break;
                 case ENABLE_NOTIFICATION:
                     chr = getCharacteristic(mUuid);
-
+                    //Log.v(TAG, "Writing descriptor of " + chr.getUuid());
                     if (chr != null) {
                         BluetoothGattDescriptor cccd = chr.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"));
                         if (cccd != null) {
@@ -166,13 +166,13 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
         mHandler = new Handler(Looper.getMainLooper());
 
         mGatt = connectGatt();
-
-
-
-
-
-
-
+        // final HIDDeviceBLESteamController finalThis = this;
+        // mHandler.postDelayed(new Runnable() {
+        //     @Override
+        //     public void run() {
+        //         finalThis.checkConnectionForChromebookIssue();
+        //     }
+        // }, CHROMEBOOK_CONNECTION_CHECK_INTERVAL);
     }
 
     public String getIdentifier() {
@@ -183,8 +183,8 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
         return mGatt;
     }
 
-
-
+    // Because on Chromebooks we show up as a dual-mode device, it will attempt to connect TRANSPORT_AUTO, which will use TRANSPORT_BREDR instead
+    // of TRANSPORT_LE.  Let's force ourselves to connect low energy.
     private BluetoothGatt connectGatt(boolean managed) {
         if (Build.VERSION.SDK_INT >= 23) {
             try {
@@ -205,14 +205,14 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
 
         Context context = mManager.getContext();
         if (context == null) {
-
+            // We are lacking any context to get our Bluetooth information.  We'll just assume disconnected.
             return BluetoothProfile.STATE_DISCONNECTED;
         }
 
         BluetoothManager btManager = (BluetoothManager)context.getSystemService(Context.BLUETOOTH_SERVICE);
         if (btManager == null) {
-
-
+            // This device doesn't support Bluetooth.  We should never be here, because how did
+            // we instantiate a device to start with?
             return BluetoothProfile.STATE_DISCONNECTED;
         }
 
@@ -230,8 +230,8 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
 
     protected void checkConnectionForChromebookIssue() {
         if (!mIsChromebook) {
-
-
+            // We only do this on Chromebooks, because otherwise it's really annoying to just attempt
+            // over and over.
             return;
         }
 
@@ -240,8 +240,8 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
         switch (connectionState) {
             case BluetoothProfile.STATE_CONNECTED:
                 if (!mIsConnected) {
-
-
+                    // We are in the Bad Chromebook Place.  We can force a disconnect
+                    // to try to recover.
                     Log.v(TAG, "Chromebook: We are in a very bad state; the controller shows as connected in the underlying Bluetooth layer, but we never received a callback.  Forcing a reconnect.");
                     mIsReconnecting = true;
                     mGatt.disconnect();
@@ -316,7 +316,7 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
                 for (BluetoothGattCharacteristic chr : service.getCharacteristics()) {
                     if (chr.getUuid().equals(inputCharacteristic)) {
                         Log.v(TAG, "Found input characteristic");
-
+                        // Start notifications
                         BluetoothGattDescriptor cccd = chr.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"));
                         if (cccd != null) {
                             enableNotification(chr.getUuid());
@@ -338,9 +338,9 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
         return false;
     }
 
-
-
-
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private void finishCurrentGattOperation() {
         GattOperation op = null;
@@ -351,9 +351,9 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
             }
         }
         if (op != null) {
-            boolean result = op.finish();  
+            boolean result = op.finish(); // TODO: Maybe in main thread as well?
 
-
+            // Our operation failed, let's add it back to the beginning of our queue.
             if (!result) {
                 mOperations.addFirst(op);
             }
@@ -372,7 +372,7 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
             mCurrentOperation = mOperations.removeFirst();
         }
 
-
+        // Run in main thread
         mHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -383,7 +383,7 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
                     }
 
                     mCurrentOperation.run();
-
+                    // now wait for the GATT callback and when it comes, finish this operation
                 }
             }
         });
@@ -411,16 +411,16 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
         queueGattOperation(op);
     }
 
-
-
-
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////  BluetoothGattCallback overridden methods
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public void onConnectionStateChange(BluetoothGatt g, int status, int newState) {
-
+        //Log.v(TAG, "onConnectionStateChange status=" + status + " newState=" + newState);
         mIsReconnecting = false;
         if (newState == 2) {
             mIsConnected = true;
-
+            // Run directly, without GattOperation
             if (!isRegistered()) {
                 mHandler.post(new Runnable() {
                     @Override
@@ -434,11 +434,11 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
             mIsConnected = false;
         }
 
-
+        // Disconnection is handled in SteamLink using the ACTION_ACL_DISCONNECTED Intent.
     }
 
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-
+        //Log.v(TAG, "onServicesDiscovered status=" + status);
         if (status == 0) {
             if (gatt.getServices().size() == 0) {
                 Log.v(TAG, "onServicesDiscovered returned zero services; something has gone horribly wrong down in Android's Bluetooth stack.");
@@ -454,7 +454,7 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
     }
 
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-
+        //Log.v(TAG, "onCharacteristicRead status=" + status + " uuid=" + characteristic.getUuid());
 
         if (characteristic.getUuid().equals(reportCharacteristic) && !mFrozen) {
             mManager.HIDDeviceFeatureReport(getId(), characteristic.getValue());
@@ -464,10 +464,10 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
     }
 
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-
+        //Log.v(TAG, "onCharacteristicWrite status=" + status + " uuid=" + characteristic.getUuid());
 
         if (characteristic.getUuid().equals(reportCharacteristic)) {
-
+            // Only register controller with the native side once it has been fully configured
             if (!isRegistered()) {
                 Log.v(TAG, "Registering Steam Controller with ID: " + getId());
                 mManager.HIDDeviceConnected(getId(), getIdentifier(), getVendorId(), getProductId(), getSerialNumber(), getVersion(), getManufacturerName(), getProductName(), 0, 0, 0, 0);
@@ -479,8 +479,8 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
     }
 
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-
-
+    // Enable this for verbose logging of controller input reports
+        //Log.v(TAG, "onCharacteristicChanged uuid=" + characteristic.getUuid() + " data=" + HexDump.dumpHexString(characteristic.getValue()));
 
         if (characteristic.getUuid().equals(inputCharacteristic) && !mFrozen) {
             mManager.HIDDeviceInputReport(getId(), characteristic.getValue());
@@ -488,12 +488,12 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
     }
 
     public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-
+        //Log.v(TAG, "onDescriptorRead status=" + status);
     }
 
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         BluetoothGattCharacteristic chr = descriptor.getCharacteristic();
-
+        //Log.v(TAG, "onDescriptorWrite status=" + status + " uuid=" + chr.getUuid() + " descriptor=" + descriptor.getUuid());
 
         if (chr.getUuid().equals(inputCharacteristic)) {
             boolean hasWrittenInputDescriptor = true;
@@ -509,20 +509,20 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
     }
 
     public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
-
+        //Log.v(TAG, "onReliableWriteCompleted status=" + status);
     }
 
     public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
-
+        //Log.v(TAG, "onReadRemoteRssi status=" + status);
     }
 
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-
+        //Log.v(TAG, "onMtuChanged status=" + status);
     }
 
-
-
-
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////// Public API
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public int getId() {
@@ -531,21 +531,21 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
 
     @Override
     public int getVendorId() {
-
+        // Valve Corporation
         final int VALVE_USB_VID = 0x28DE;
         return VALVE_USB_VID;
     }
 
     @Override
     public int getProductId() {
-
+        // We don't have an easy way to query from the Bluetooth device, but we know what it is
         final int D0G_BLE2_PID = 0x1106;
         return D0G_BLE2_PID;
     }
 
     @Override
     public String getSerialNumber() {
-
+        // This will be read later via feature report by Steam
         return "12345";
     }
 
@@ -584,9 +584,9 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
             return -1;
         }
 
-
+        // We need to skip the first byte, as that doesn't go over the air
         byte[] actual_report = Arrays.copyOfRange(report, 1, report.length - 1);
-
+        //Log.v(TAG, "sendFeatureReport " + HexDump.dumpHexString(actual_report));
         writeCharacteristic(reportCharacteristic, actual_report);
         return report.length;
     }
@@ -601,7 +601,7 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
             return -1;
         }
 
-
+        //Log.v(TAG, "sendFeatureReport " + HexDump.dumpHexString(report));
         writeCharacteristic(reportCharacteristic, report);
         return report.length;
     }
@@ -616,7 +616,7 @@ class HIDDeviceBLESteamController extends BluetoothGattCallback implements HIDDe
             return false;
         }
 
-
+        //Log.v(TAG, "getFeatureReport");
         readCharacteristic(reportCharacteristic);
         return true;
     }

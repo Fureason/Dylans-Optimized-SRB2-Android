@@ -30,25 +30,25 @@ public class MenuNavigation extends Layout {
         navigationJoystick.setDirectionalAutoRepeat(true);
 
         this.buttons = new Button[]{
-
+                // First, we will create a joystick so the player can move.
                 navigationJoystick,
 
-
+                // Finally, a simple button.
                 new Button(
-                        1f,  
-                        1f,  
-                        -finalOffset - screenOffset,  
-                        -finalOffset - screenOffset,  
-                        finalRadius,  
+                        1f, // The X scale across the screen.
+                        1f, // The Y scale across the screen.
+                        -finalOffset - screenOffset, // The X offset for the button.
+                        -finalOffset - screenOffset, // The Y offset for the button.
+                        finalRadius, // The width of the button.
                         "Select",
                         KeyEvent.KEYCODE_ENTER
                 ),
                 new Button(
-                        1f,  
-                        1f,  
-                        -finalOffset - screenOffset - finalSpacing,  
-                        -finalOffset - screenOffset,  
-                        finalRadius,  
+                        1f, // The X scale across the screen.
+                        1f, // The Y scale across the screen.
+                        -finalOffset - screenOffset - finalSpacing, // The X offset for the button.
+                        -finalOffset - screenOffset, // The Y offset for the button.
+                        finalRadius, // The width of the button.
                         "Back",
                         KeyEvent.KEYCODE_ESCAPE
                 ),

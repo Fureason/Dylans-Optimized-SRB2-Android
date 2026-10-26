@@ -1,11 +1,11 @@
-
+// Game_Music_Emu https://bitbucket.org/mpyne/game-music-emu/
 
 #include "Ay_Emu.h"
 
 #include "blargg_endian.h"
 #include <string.h>
 
-#include <algorithm>  
+#include <algorithm> // min, max
 
 /* Copyright (C) 2006 Shay Green. This module is free software; you
 can redistribute it and/or modify it under the terms of the GNU Lesser
@@ -48,7 +48,7 @@ Ay_Emu::Ay_Emu()
 
 Ay_Emu::~Ay_Emu() { }
 
-
+// Track info
 
 static byte const* get_data( Ay_Emu::file_t const& file, byte const* ptr, int min_size )
 {
@@ -86,7 +86,7 @@ static void copy_ay_fields( Ay_Emu::file_t const& file, track_info_t* out, int t
 	Gme_File::copy_field_( out->song, (char const*) get_data( file, file.tracks + track * 4, 1 ) );
 	byte const* track_info = get_data( file, file.tracks + track * 4 + 2, 6 );
 	if ( track_info )
-		out->length = get_be16( track_info + 4 ) * (1000L / 50);  
+		out->length = get_be16( track_info + 4 ) * (1000L / 50); // frames to msec
 	
 	Gme_File::copy_field_( out->author,  (char const*) get_data( file, file.header->author, 1 ) );
 	Gme_File::copy_field_( out->comment, (char const*) get_data( file, file.header->comment, 1 ) );
@@ -124,7 +124,7 @@ static Music_Emu* new_ay_file() { return BLARGG_NEW Ay_File; }
 static gme_type_t_ const gme_ay_type_ = { "ZX Spectrum", 0, &new_ay_emu, &new_ay_file, "AY", 1 };
 extern gme_type_t const gme_ay_type = &gme_ay_type_;
 
-
+// Setup
 
 blargg_err_t Ay_Emu::load_mem_( byte const* in, long size )
 {
@@ -155,7 +155,7 @@ void Ay_Emu::set_voice( int i, Blip_Buffer* center, Blip_Buffer*, Blip_Buffer* )
 		apu.osc_output( i, center );
 }
 
-
+// Emulation
 
 void Ay_Emu::set_tempo_( double t )
 {
@@ -166,13 +166,13 @@ blargg_err_t Ay_Emu::start_track_( int track )
 {
 	RETURN_ERR( Classic_Emu::start_track_( track ) );
 	
-	memset( mem.ram + 0x0000, 0xC9, 0x100 );  
+	memset( mem.ram + 0x0000, 0xC9, 0x100 ); // fill RST vectors with RET
 	memset( mem.ram + 0x0100, 0xFF, 0x4000 - 0x100 );
 	memset( mem.ram + ram_start, 0x00, sizeof mem.ram - ram_start );
 	memset( mem.padding1, 0xFF, sizeof mem.padding1 );
 	memset( mem.ram + 0x10000, 0xFF, sizeof mem.ram - 0x10000 );
 	
-
+	// locate data blocks
 	byte const* const data = get_data( file, file.tracks + track * 4 + 2, 14 );
 	if ( !data ) return "File data missing";
 	
@@ -182,7 +182,7 @@ blargg_err_t Ay_Emu::start_track_( int track )
 	byte const* blocks = get_data( file, data + 12, 8 );
 	if ( !blocks ) return "File data missing";
 	
-
+	// initial addresses
 	cpu::reset( mem.ram );
 	r.sp = get_be16( more_data );
 	r.b.a = r.b.b = r.b.d = r.b.h = data [8];
@@ -197,7 +197,7 @@ blargg_err_t Ay_Emu::start_track_( int track )
 	if ( !init )
 		init = addr;
 	
-
+	// copy blocks into memory
 	do
 	{
 		blocks += 2;
@@ -214,8 +214,8 @@ blargg_err_t Ay_Emu::start_track_( int track )
 			set_warning( "Missing file data" );
 			len = file.end - in;
 		}
-
-		if ( addr < ram_start && addr >= 0x400 )  
+		//debug_printf( "addr: $%04X, len: $%04X\n", addr, len );
+		if ( addr < ram_start && addr >= 0x400 ) // several tracks use low data
 			debug_printf( "Block addr in ROM\n" );
 		memcpy( mem.ram + addr, in, len );
 		
@@ -227,27 +227,27 @@ blargg_err_t Ay_Emu::start_track_( int track )
 	}
 	while ( (addr = get_be16( blocks )) != 0 );
 	
-
+	// copy and configure driver
 	static byte const passive [] = {
-		0xF3,        
-		0xCD, 0, 0,  
-		0xED, 0x5E,  
-		0xFB,        
-		0x76,        
-		0x18, 0xFA   
+		0xF3,       // DI
+		0xCD, 0, 0, // CALL init
+		0xED, 0x5E, // LOOP: IM 2
+		0xFB,       // EI
+		0x76,       // HALT
+		0x18, 0xFA  // JR LOOP
 	};
 	static byte const active [] = {
-		0xF3,        
-		0xCD, 0, 0,  
-		0xED, 0x56,  
-		0xFB,        
-		0x76,        
-		0xCD, 0, 0,  
-		0x18, 0xF7   
+		0xF3,       // DI
+		0xCD, 0, 0, // CALL init
+		0xED, 0x56, // LOOP: IM 1
+		0xFB,       // EI
+		0x76,       // HALT
+		0xCD, 0, 0, // CALL play
+		0x18, 0xF7  // JR LOOP
 	};
 	memcpy( mem.ram, passive, sizeof passive );
 	unsigned play_addr = get_be16( more_data + 4 );
-
+	//debug_printf( "Play: $%04X\n", play_addr );
 	if ( play_addr )
 	{
 		memcpy( mem.ram, active, sizeof active );
@@ -257,16 +257,16 @@ blargg_err_t Ay_Emu::start_track_( int track )
 	mem.ram [2] = init;
 	mem.ram [3] = init >> 8;
 	
-	mem.ram [0x38] = 0xFB;  
+	mem.ram [0x38] = 0xFB; // Put EI at interrupt vector (followed by RET)
 	
-	memcpy( mem.ram + 0x10000, mem.ram, 0x80 );  
+	memcpy( mem.ram + 0x10000, mem.ram, 0x80 ); // some code wraps around (ugh)
 	
 	beeper_delta = int (apu.amp_range * 0.65);
 	last_beeper = 0;
 	apu.reset();
 	next_play = play_period;
 	
-
+	// start at spectrum speed
 	change_clock_rate( spectrum_clock );
 	set_tempo( tempo() );
 	
@@ -277,7 +277,7 @@ blargg_err_t Ay_Emu::start_track_( int track )
 	return 0;
 }
 
-
+// Emulation
 
 void Ay_Emu::cpu_out_misc( cpu_time_t time, unsigned addr, int data )
 {
@@ -357,9 +357,9 @@ void ay_cpu_out( Ay_Cpu* cpu, cpu_time_t time, unsigned addr, int data )
 
 int ay_cpu_in( Ay_Cpu*, unsigned addr )
 {
-
+	// keyboard read and other things
 	if ( (addr & 0xFF) == 0xFE )
-		return 0xFF;  
+		return 0xFF; // other values break some beeper tunes
 	
 	debug_printf( "Unmapped IN : $%04X\n", addr );
 	return 0xFF;
@@ -369,7 +369,7 @@ blargg_err_t Ay_Emu::run_clocks( blip_time_t& duration, int )
 {
 	set_time( 0 );
 	if ( !(spectrum_mode | cpc_mode) )
-		duration /= 2;  
+		duration /= 2; // until mode is set, leave room for halved clock rate
 	
 	while ( time() < duration )
 	{

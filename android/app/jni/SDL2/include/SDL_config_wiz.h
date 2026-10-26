@@ -23,9 +23,9 @@
 #define SDL_config_wiz_h_
 #define SDL_config_h_
 
- 
+/* This is a set of defines to configure the SDL features */
 
- 
+/* General platform specific identifiers */
 #include "SDL_platform.h"
 
 #define SDL_BYTEORDER 1234
@@ -150,4 +150,4 @@
 #define SDL_VIDEO_RENDER_OGL_ES 1
 #define SDL_VIDEO_OPENGL_ES 1
 
-#endif  
+#endif /* SDL_config_wiz_h_ */

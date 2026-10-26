@@ -22,26 +22,26 @@
 #ifndef SDL_config_h_
 #define SDL_config_h_
 
-   
-                         
-  
-                                                          
-   
+/**
+ *  \file SDL_config.h.in
+ *
+ *  This is a set of defines to configure the SDL features
+ */
 
- 
+/* General platform specific identifiers */
 #include "SDL_platform.h"
 
- 
+/* Make sure that this isn't included by Visual C++ */
 #ifdef _MSC_VER
 #error You should run hg revert SDL_config.h
 #endif
 
- 
+/* C language features */
 #undef const
 #undef inline
 #undef volatile
 
- 
+/* C datatypes */
 #if defined(__LP64__) || defined(_LP64) || defined(_WIN64)
 #define SIZEOF_VOIDP 8
 #else
@@ -51,11 +51,11 @@
 #undef HAVE_GCC_ATOMICS
 #undef HAVE_GCC_SYNC_LOCK_TEST_AND_SET
 
- 
+/* Comment this if you want to build without any C library requirements */
 #undef HAVE_LIBC
 #if HAVE_LIBC
 
- 
+/* Useful headers */
 #undef STDC_HEADERS
 #undef HAVE_ALLOCA_H
 #undef HAVE_CTYPE_H
@@ -78,13 +78,13 @@
 #undef HAVE_PTHREAD_NP_H
 #undef HAVE_LIBUNWIND_H
 
- 
+/* C library functions */
 #undef HAVE_MALLOC
 #undef HAVE_CALLOC
 #undef HAVE_REALLOC
 #undef HAVE_FREE
 #undef HAVE_ALLOCA
-#ifndef __WIN32__  
+#ifndef __WIN32__ /* Don't use C runtime versions of these on Windows */
 #undef HAVE_GETENV
 #undef HAVE_SETENV
 #undef HAVE_PUTENV
@@ -212,7 +212,7 @@
 #define HAVE_STDARG_H 1
 #define HAVE_STDDEF_H 1
 #define HAVE_STDINT_H 1
-#endif  
+#endif /* HAVE_LIBC */
 
 #undef HAVE_ALTIVEC_H
 #undef HAVE_DBUS_DBUS_H
@@ -239,10 +239,10 @@
 #undef HAVE_XINPUT_GAMEPAD_EX
 #undef HAVE_XINPUT_STATE_EX
 
- 
+/* SDL internal assertion support */
 #undef SDL_DEFAULT_ASSERT_LEVEL
 
- 
+/* Allow disabling of core subsystems */
 #undef SDL_ATOMIC_DISABLED
 #undef SDL_AUDIO_DISABLED
 #undef SDL_CPUINFO_DISABLED
@@ -259,7 +259,7 @@
 #undef SDL_POWER_DISABLED
 #undef SDL_FILESYSTEM_DISABLED
 
- 
+/* Enable various audio drivers */
 #undef SDL_AUDIO_DRIVER_ALSA
 #undef SDL_AUDIO_DRIVER_ALSA_DYNAMIC
 #undef SDL_AUDIO_DRIVER_ANDROID
@@ -296,7 +296,7 @@
 #undef SDL_AUDIO_DRIVER_WINMM
 #undef SDL_AUDIO_DRIVER_OS2
 
- 
+/* Enable various input drivers */
 #undef SDL_INPUT_LINUXEV
 #undef SDL_INPUT_FBSDKBIO
 #undef SDL_INPUT_LINUXKD
@@ -324,20 +324,20 @@
 #undef SDL_HAPTIC_DINPUT
 #undef SDL_HAPTIC_XINPUT
 
- 
+/* Enable various sensor drivers */
 #undef SDL_SENSOR_ANDROID
 #undef SDL_SENSOR_COREMOTION
 #undef SDL_SENSOR_WINDOWS
 #undef SDL_SENSOR_DUMMY
 
- 
+/* Enable various shared object loading systems */
 #undef SDL_LOADSO_DLOPEN
 #undef SDL_LOADSO_DUMMY
 #undef SDL_LOADSO_LDG
 #undef SDL_LOADSO_WINDOWS
 #undef SDL_LOADSO_OS2
 
- 
+/* Enable various threading systems */
 #undef SDL_THREAD_GENERIC_COND_SUFFIX
 #undef SDL_THREAD_PTHREAD
 #undef SDL_THREAD_PTHREAD_RECURSIVE_MUTEX
@@ -345,14 +345,14 @@
 #undef SDL_THREAD_WINDOWS
 #undef SDL_THREAD_OS2
 
- 
+/* Enable various timer systems */
 #undef SDL_TIMER_HAIKU
 #undef SDL_TIMER_DUMMY
 #undef SDL_TIMER_UNIX
 #undef SDL_TIMER_WINDOWS
 #undef SDL_TIMER_OS2
 
- 
+/* Enable various video drivers */
 #undef SDL_VIDEO_DRIVER_HAIKU
 #undef SDL_VIDEO_DRIVER_COCOA
 #undef SDL_VIDEO_DRIVER_DIRECTFB
@@ -406,7 +406,7 @@
 #undef SDL_VIDEO_RENDER_DIRECTFB
 #undef SDL_VIDEO_RENDER_METAL
 
- 
+/* Enable OpenGL support */
 #undef SDL_VIDEO_OPENGL
 #undef SDL_VIDEO_OPENGL_ES
 #undef SDL_VIDEO_OPENGL_ES2
@@ -418,13 +418,13 @@
 #undef SDL_VIDEO_OPENGL_OSMESA
 #undef SDL_VIDEO_OPENGL_OSMESA_DYNAMIC
 
- 
+/* Enable Vulkan support */
 #undef SDL_VIDEO_VULKAN
 
- 
+/* Enable Metal support */
 #undef SDL_VIDEO_METAL
 
- 
+/* Enable system power support */
 #undef SDL_POWER_LINUX
 #undef SDL_POWER_WINDOWS
 #undef SDL_POWER_MACOSX
@@ -433,7 +433,7 @@
 #undef SDL_POWER_EMSCRIPTEN
 #undef SDL_POWER_HARDWIRED
 
- 
+/* Enable system filesystem support */
 #undef SDL_FILESYSTEM_HAIKU
 #undef SDL_FILESYSTEM_COCOA
 #undef SDL_FILESYSTEM_DUMMY
@@ -444,22 +444,22 @@
 #undef SDL_FILESYSTEM_EMSCRIPTEN
 #undef SDL_FILESYSTEM_OS2
 
- 
+/* Enable assembly routines */
 #undef SDL_ASSEMBLY_ROUTINES
 #undef SDL_ALTIVEC_BLITTERS
 #undef SDL_ARM_SIMD_BLITTERS
 #undef SDL_ARM_NEON_BLITTERS
 
- 
+/* Enable ime support */
 #undef SDL_USE_IME
 
- 
+/* Enable dynamic udev support */
 #undef SDL_UDEV_DYNAMIC
 
- 
+/* Enable dynamic libusb support */
 #undef SDL_LIBUSB_DYNAMIC
 
- 
+/* Enable dynamic libsamplerate support */
 #undef SDL_LIBSAMPLERATE_DYNAMIC
 
-#endif  
+#endif /* SDL_config_h_ */

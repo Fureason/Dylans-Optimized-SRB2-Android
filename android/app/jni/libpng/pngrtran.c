@@ -21,7 +21,7 @@
 #ifdef PNG_READ_SUPPORTED
 #include "pngpriv.h"
 
- 
+/* Set the action on getting a CRC error for an ancillary or critical chunk. */
 void PNGAPI
 png_set_crc_action(png_structp png_ptr, int crit_action, int ancil_action)
 {
@@ -30,27 +30,27 @@ png_set_crc_action(png_structp png_ptr, int crit_action, int ancil_action)
    if (png_ptr == NULL)
       return;
 
-    
+   /* Tell libpng how we react to CRC errors in critical chunks */
    switch (crit_action)
    {
-      case PNG_CRC_NO_CHANGE:                         
+      case PNG_CRC_NO_CHANGE:                        /* Leave setting as is */
          break;
 
-      case PNG_CRC_WARN_USE:                                
+      case PNG_CRC_WARN_USE:                               /* Warn/use data */
          png_ptr->flags &= ~PNG_FLAG_CRC_CRITICAL_MASK;
          png_ptr->flags |= PNG_FLAG_CRC_CRITICAL_USE;
          break;
 
-      case PNG_CRC_QUIET_USE:                              
+      case PNG_CRC_QUIET_USE:                             /* Quiet/use data */
          png_ptr->flags &= ~PNG_FLAG_CRC_CRITICAL_MASK;
          png_ptr->flags |= PNG_FLAG_CRC_CRITICAL_USE |
                            PNG_FLAG_CRC_CRITICAL_IGNORE;
          break;
 
-      case PNG_CRC_WARN_DISCARD:     
+      case PNG_CRC_WARN_DISCARD:    /* Not a valid action for critical data */
          png_warning(png_ptr,
             "Can't discard critical data on CRC error");
-      case PNG_CRC_ERROR_QUIT:                                 
+      case PNG_CRC_ERROR_QUIT:                                /* Error/quit */
 
       case PNG_CRC_DEFAULT:
       default:
@@ -58,29 +58,29 @@ png_set_crc_action(png_structp png_ptr, int crit_action, int ancil_action)
          break;
    }
 
-    
+   /* Tell libpng how we react to CRC errors in ancillary chunks */
    switch (ancil_action)
    {
-      case PNG_CRC_NO_CHANGE:                        
+      case PNG_CRC_NO_CHANGE:                       /* Leave setting as is */
          break;
 
-      case PNG_CRC_WARN_USE:                               
+      case PNG_CRC_WARN_USE:                              /* Warn/use data */
          png_ptr->flags &= ~PNG_FLAG_CRC_ANCILLARY_MASK;
          png_ptr->flags |= PNG_FLAG_CRC_ANCILLARY_USE;
          break;
 
-      case PNG_CRC_QUIET_USE:                             
+      case PNG_CRC_QUIET_USE:                            /* Quiet/use data */
          png_ptr->flags &= ~PNG_FLAG_CRC_ANCILLARY_MASK;
          png_ptr->flags |= PNG_FLAG_CRC_ANCILLARY_USE |
                            PNG_FLAG_CRC_ANCILLARY_NOWARN;
          break;
 
-      case PNG_CRC_ERROR_QUIT:                                
+      case PNG_CRC_ERROR_QUIT:                               /* Error/quit */
          png_ptr->flags &= ~PNG_FLAG_CRC_ANCILLARY_MASK;
          png_ptr->flags |= PNG_FLAG_CRC_ANCILLARY_NOWARN;
          break;
 
-      case PNG_CRC_WARN_DISCARD:                       
+      case PNG_CRC_WARN_DISCARD:                      /* Warn/discard data */
 
       case PNG_CRC_DEFAULT:
       default:
@@ -91,7 +91,7 @@ png_set_crc_action(png_structp png_ptr, int crit_action, int ancil_action)
 
 #if defined(PNG_READ_BACKGROUND_SUPPORTED) && \
     defined(PNG_FLOATING_POINT_SUPPORTED)
- 
+/* Handle alpha and tRNS via a background color */
 void PNGAPI
 png_set_background(png_structp png_ptr,
    png_color_16p background_color, int background_gamma_code,
@@ -117,7 +117,7 @@ png_set_background(png_structp png_ptr,
 #endif
 
 #ifdef PNG_READ_16_TO_8_SUPPORTED
- 
+/* Strip 16 bit depth files to 8 bit depth */
 void PNGAPI
 png_set_strip_16(png_structp png_ptr)
 {
@@ -142,14 +142,14 @@ png_set_strip_alpha(png_structp png_ptr)
 #endif
 
 #ifdef PNG_READ_DITHER_SUPPORTED
-                                                              
-                                                             
-                                                               
-                                                                    
-                                                                  
-                                                                   
-                                                                
-   
+/* Dither file to 8 bit.  Supply a palette, the current number
+ * of elements in the palette, the maximum number of elements
+ * allowed, and a histogram if possible.  If the current number
+ * of colors is greater then the maximum number, the palette will be
+ * modified to fit in the maximum number.  "full_dither" indicates
+ * whether we need a dithering cube set up for RGB images, or if we
+ * simply are reducing the number of colors in a paletted image.
+ */
 
 typedef struct png_dsort_struct
 {
@@ -185,30 +185,30 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
    {
       if (histogram != NULL)
       {
-                                                                      
-                                                           
-            
+         /* This is easy enough, just throw out the least used colors.
+          * Perhaps not the best solution, but good enough.
+          */
 
          int i;
 
-          
+         /* Initialize an array to sort colors */
          png_ptr->dither_sort = (png_bytep)png_malloc(png_ptr,
             (png_uint_32)(num_palette * png_sizeof(png_byte)));
 
-          
+         /* Initialize the dither_sort array */
          for (i = 0; i < num_palette; i++)
             png_ptr->dither_sort[i] = (png_byte)i;
 
-                                                             
-                                                            
-                                                             
-                                                          
-                       
-            
+         /* Find the least used palette entries by starting a
+          * bubble sort, and running it until we have sorted
+          * out enough colors.  Note that we don't care about
+          * sorting all the colors, just finding which are
+          * least used.
+          */
 
          for (i = num_palette - 1; i >= maximum_colors; i--)
          {
-            int done;  
+            int done; /* To stop early if the list is pre-sorted */
             int j;
 
             done = 1;
@@ -229,14 +229,14 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
                break;
          }
 
-          
+         /* Swap the palette around, and set up a table, if necessary */
          if (full_dither)
          {
             int j = num_palette;
 
-                                                                  
-                               
-               
+            /* Put all the useful colors within the max, but don't
+             * move the others.
+             */
             for (i = 0; i < maximum_colors; i++)
             {
                if ((int)png_ptr->dither_sort[i] >= maximum_colors)
@@ -252,12 +252,12 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
          {
             int j = num_palette;
 
-                                                                 
-                                           
-               
+            /* Move all the used colors inside the max limit, and
+             * develop a translation table.
+             */
             for (i = 0; i < maximum_colors; i++)
             {
-                
+               /* Only move the colors we need to */
                if ((int)png_ptr->dither_sort[i] >= maximum_colors)
                {
                   png_color tmp_color;
@@ -269,20 +269,20 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
                   tmp_color = palette[j];
                   palette[j] = palette[i];
                   palette[i] = tmp_color;
-                   
+                  /* Indicate where the color went */
                   png_ptr->dither_index[j] = (png_byte)i;
                   png_ptr->dither_index[i] = (png_byte)j;
                }
             }
 
-             
+            /* Find closest color for those colors we are not using */
             for (i = 0; i < num_palette; i++)
             {
                if ((int)png_ptr->dither_index[i] >= maximum_colors)
                {
                   int min_d, k, min_k, d_index;
 
-                   
+                  /* Find the closest color to one we threw out */
                   d_index = png_ptr->dither_index[i];
                   min_d = PNG_COLOR_DIST(palette[d_index], palette[0]);
                   for (k = 1, min_k = 0; k < maximum_colors; k++)
@@ -297,7 +297,7 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
                         min_k = k;
                      }
                   }
-                   
+                  /* Point to closest color */
                   png_ptr->dither_index[i] = (png_byte)min_k;
                }
             }
@@ -307,14 +307,14 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
       }
       else
       {
-                                                                    
-                                                                 
-                                                                 
-                                                                   
-                                                                 
-                                                                    
-                                                           
-            
+         /* This is much harder to do simply (and quickly).  Perhaps
+          * we need to go through a median cut routine, but those
+          * don't always behave themselves with only a few colors
+          * as input.  So we will just find the closest two colors,
+          * and throw out one of them (chosen somewhat randomly).
+          * [We don't understand this at all, so if someone wants to
+          *  work on improving it, be our guest - AED, GRP]
+          */
          int i;
          int max_d;
          int num_new_palette;
@@ -323,13 +323,13 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
 
          t = NULL;
 
-          
+         /* Initialize palette index arrays */
          png_ptr->index_to_palette = (png_bytep)png_malloc(png_ptr,
             (png_uint_32)(num_palette * png_sizeof(png_byte)));
          png_ptr->palette_to_index = (png_bytep)png_malloc(png_ptr,
             (png_uint_32)(num_palette * png_sizeof(png_byte)));
 
-          
+         /* Initialize the sort array */
          for (i = 0; i < num_palette; i++)
          {
             png_ptr->index_to_palette[i] = (png_byte)i;
@@ -341,14 +341,14 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
 
          num_new_palette = num_palette;
 
-                                                                  
-                                                        
-                                                              
-                                                               
-                                             
-           
-                                                              
-            
+         /* Initial wild guess at how far apart the farthest pixel
+          * pair we will be eliminating will be.  Larger
+          * numbers mean more areas will be allocated, Smaller
+          * numbers run the risk of not saving enough data, and
+          * having to do this all over again.
+          *
+          * I have not done extensive checking on this number.
+          */
          max_d = 96;
 
          while (num_new_palette > maximum_colors)
@@ -502,14 +502,14 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
 
          for (ir = 0; ir < num_red; ir++)
          {
-             
+            /* int dr = abs(ir - r); */
             int dr = ((ir > r) ? ir - r : r - ir);
             int index_r = (ir << (PNG_DITHER_BLUE_BITS +
                 PNG_DITHER_GREEN_BITS));
 
             for (ig = 0; ig < num_green; ig++)
             {
-                
+               /* int dg = abs(ig - g); */
                int dg = ((ig > g) ? ig - g : g - ig);
                int dt = dr + dg;
                int dm = ((dr > dg) ? dr : dg);
@@ -518,7 +518,7 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
                for (ib = 0; ib < num_blue; ib++)
                {
                   int d_index = index_g | ib;
-                   
+                  /* int db = abs(ib - b); */
                   int db = ((ib > b) ? ib - b : b - ib);
                   int dmax = ((dm > db) ? dm : db);
                   int d = dmax + dt + db;
@@ -539,15 +539,15 @@ png_set_dither(png_structp png_ptr, png_colorp palette,
 #endif
 
 #if defined(PNG_READ_GAMMA_SUPPORTED) && defined(PNG_FLOATING_POINT_SUPPORTED)
-                                                                   
-                                                                          
-                                                                          
-                                           
-  
-                                                                            
-                                                                         
-                                                        
-   
+/* Transform the image from the file_gamma to the screen_gamma.  We
+ * only do transformations on images where the file_gamma and screen_gamma
+ * are not close reciprocals, otherwise it slows things down slightly, and
+ * also needlessly introduces small errors.
+ *
+ * We will turn off gamma transformation later if no semitransparent entries
+ * are present in the tRNS array for palette images.  We can't do it here
+ * because we don't necessarily have the tRNS chunk yet.
+ */
 void PNGAPI
 png_set_gamma(png_structp png_ptr, double scrn_gamma, double file_gamma)
 {
@@ -566,10 +566,10 @@ png_set_gamma(png_structp png_ptr, double scrn_gamma, double file_gamma)
 #endif
 
 #ifdef PNG_READ_EXPAND_SUPPORTED
-                                                            
-                                                               
-                     
-   
+/* Expand paletted images to RGB, expand grayscale images of
+ * less than 8-bit depth to 8-bit depth, and expand tRNS chunks
+ * to alpha channels.
+ */
 void PNGAPI
 png_set_expand(png_structp png_ptr)
 {
@@ -582,25 +582,25 @@ png_set_expand(png_structp png_ptr)
    png_ptr->flags &= ~PNG_FLAG_ROW_INIT;
 }
 
-                                                                       
-                                                                         
-                                                                           
-                                                                            
-                                                                           
-                                                                             
-                                                                          
-                                                                       
-              
-  
-                                                                          
-                                                                     
-  
-                                                                         
-                                                                       
-                                                                 
-   
+/* GRR 19990627:  the following three functions currently are identical
+ *  to png_set_expand().  However, it is entirely reasonable that someone
+ *  might wish to expand an indexed image to RGB but *not* expand a single,
+ *  fully transparent palette entry to a full alpha channel--perhaps instead
+ *  convert tRNS to the grayscale/RGB format (16-bit RGB value), or replace
+ *  the transparent color with a particular RGB value, or drop tRNS entirely.
+ *  IOW, a future version of the library may make the transformations flag
+ *  a bit more fine-grained, with separate bits for each of these three
+ *  functions.
+ *
+ *  More to the point, these functions make it obvious what libpng will be
+ *  doing, whereas "expand" can (and does) mean any number of things.
+ *
+ *  GRP 20060307: In libpng-1.2.9, png_set_gray_1_2_4_to_8() was modified
+ *  to expand only the sample depth but not to expand the tRNS to alpha
+ *  and its name was changed to png_set_expand_gray_1_2_4_to_8().
+ */
 
- 
+/* Expand paletted images to RGB. */
 void PNGAPI
 png_set_palette_to_rgb(png_structp png_ptr)
 {
@@ -613,7 +613,7 @@ png_set_palette_to_rgb(png_structp png_ptr)
    png_ptr->flags &= ~PNG_FLAG_ROW_INIT;
 }
 
- 
+/* Expand grayscale images of less than 8-bit depth to 8 bits. */
 void PNGAPI
 png_set_expand_gray_1_2_4_to_8(png_structp png_ptr)
 {
@@ -628,7 +628,7 @@ png_set_expand_gray_1_2_4_to_8(png_structp png_ptr)
 
 
 
- 
+/* Expand tRNS chunks to alpha channels. */
 void PNGAPI
 png_set_tRNS_to_alpha(png_structp png_ptr)
 {
@@ -637,7 +637,7 @@ png_set_tRNS_to_alpha(png_structp png_ptr)
    png_ptr->transformations |= (PNG_EXPAND | PNG_EXPAND_tRNS);
    png_ptr->flags &= ~PNG_FLAG_ROW_INIT;
 }
-#endif  
+#endif /* defined(PNG_READ_EXPAND_SUPPORTED) */
 
 #ifdef PNG_READ_GRAY_TO_RGB_SUPPORTED
 void PNGAPI
@@ -652,9 +652,9 @@ png_set_gray_to_rgb(png_structp png_ptr)
 
 #ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
 #ifdef PNG_FLOATING_POINT_SUPPORTED
-                                                                         
-                                                                            
-   
+/* Convert a RGB image to a grayscale of the same width.  This allows us,
+ * for example, to convert a 24 bpp RGB image into an 8 bpp grayscale image.
+ */
 
 void PNGAPI
 png_set_rgb_to_gray(png_structp png_ptr, int error_action, double red,
@@ -701,8 +701,8 @@ png_set_rgb_to_gray_fixed(png_structp png_ptr, int error_action,
       png_uint_16 red_int, green_int;
       if (red < 0 || green < 0)
       {
-         red_int   =  6968;  
-         green_int = 23434;  
+         red_int   =  6968; /* .212671 * 32768 + .5 */
+         green_int = 23434; /* .715160 * 32768 + .5 */
       }
       else if (red + green < 100000L)
       {
@@ -741,10 +741,10 @@ png_set_read_user_transform_fn(png_structp png_ptr, png_user_transform_ptr
 }
 #endif
 
-                                                                      
-               
-   
-void  
+/* Initialize everything needed for the read.  This includes modifying
+ * the palette.
+ */
+void /* PRIVATE */
 png_init_read_transformations(png_structp png_ptr)
 {
    png_debug(1, "in png_init_read_transformations");
@@ -759,16 +759,16 @@ png_init_read_transformations(png_structp png_ptr)
 #if defined(PNG_READ_EXPAND_SUPPORTED) && defined(PNG_READ_BACKGROUND_SUPPORTED)
 
 #ifdef PNG_READ_GRAY_TO_RGB_SUPPORTED
-                                                               
-                           
-     
-                                                                            
-                                                                      
-                                                                         
-                                                            
-                                                          
-                                          
-      
+   /* Detect gray background and attempt to enable optimization
+    * for gray --> RGB case
+    *
+    * Note:  if PNG_BACKGROUND_EXPAND is set and color_type is either RGB or
+    * RGB_ALPHA (in which case need_expand is superfluous anyway), the
+    * background color might actually be gray yet not be flagged as such.
+    * This is not a problem for the current code, which uses
+    * PNG_BACKGROUND_IS_GRAY only to decide when to do the
+    * png_do_gray_to_rgb() transformation.
+    */
    if ((png_ptr->transformations & PNG_BACKGROUND_EXPAND) &&
        !(color_type & PNG_COLOR_MASK_COLOR))
    {
@@ -787,9 +787,9 @@ png_init_read_transformations(png_structp png_ptr)
    if ((png_ptr->transformations & PNG_BACKGROUND_EXPAND) &&
        (png_ptr->transformations & PNG_EXPAND))
    {
-      if (!(color_type & PNG_COLOR_MASK_COLOR))   
+      if (!(color_type & PNG_COLOR_MASK_COLOR))  /* i.e., GRAY or GRAY_ALPHA */
       {
-          
+         /* Expand background and tRNS chunks */
          switch (png_ptr->bit_depth)
          {
             case 1:
@@ -852,9 +852,9 @@ png_init_read_transformations(png_structp png_ptr)
            if (!(png_ptr->transformations & PNG_EXPAND_tRNS))
 #endif
            {
-                                                                      
-                                                                    
-              
+           /* Invert the alpha channel (in tRNS) unless the pixels are
+            * going to be expanded, in which case leave it for later
+            */
               int i, istop;
               istop=(int)png_ptr->num_trans;
               for (i=0; i<istop; i++)
@@ -881,7 +881,7 @@ png_init_read_transformations(png_structp png_ptr)
     for (i=0; i<png_ptr->num_trans; i++)
     {
       if (png_ptr->trans_alpha[i] != 0 && png_ptr->trans_alpha[i] != 0xff)
-        k=1;  
+        k=1; /* Partial transparency is present */
     }
     if (k == 0)
       png_ptr->transformations &= ~PNG_GAMMA;
@@ -897,7 +897,7 @@ png_init_read_transformations(png_structp png_ptr)
       {
          if (color_type == PNG_COLOR_TYPE_PALETTE)
          {
-            
+           /* Could skip if no transparency */
             png_color back, back_1;
             png_colorp palette = png_ptr->palette;
             int num_palette = png_ptr->num_palette;
@@ -934,8 +934,8 @@ png_init_read_transformations(png_structp png_ptr)
                                  png_ptr->screen_gamma);
                      break;
                   default:
-                     g = 1.0;     
-                     gs = 1.0;    
+                     g = 1.0;    /* back_1 */
+                     gs = 1.0;   /* back */
                }
 
                if ( fabs(gs - 1.0) < PNG_GAMMA_THRESHOLD)
@@ -970,7 +970,7 @@ png_init_read_transformations(png_structp png_ptr)
                   {
                      palette[i] = back;
                   }
-                  else  
+                  else /* if (png_ptr->trans_alpha[i] != 0xff) */
                   {
                      png_byte v, w;
 
@@ -994,18 +994,18 @@ png_init_read_transformations(png_structp png_ptr)
                   palette[i].blue = png_ptr->gamma_table[palette[i].blue];
                }
             }
-                                                                          
-                                                                         
-                                                                           
-                                               
-               
+            /* Prevent the transformations being done again, and make sure
+             * that the now spurious alpha channel is stripped - the code
+             * has just reduced background composition and gamma correction
+             * to a simple alpha channel strip.
+             */
             png_ptr->transformations &= ~PNG_BACKGROUND;
             png_ptr->transformations &= ~PNG_GAMMA;
             png_ptr->transformations |= PNG_STRIP_ALPHA;
          }
-          
+         /* if (png_ptr->background_gamma_type!=PNG_BACKGROUND_GAMMA_UNKNOWN) */
          else
-          
+         /* color_type != PNG_COLOR_TYPE_PALETTE */
          {
             double m = (double)(((png_uint_32)1 << png_ptr->bit_depth) - 1);
             double g = 1.0;
@@ -1039,7 +1039,7 @@ png_init_read_transformations(png_structp png_ptr)
                 (png_ptr->background.red != png_ptr->background.blue) ||
                 (png_ptr->background.red != png_ptr->background.gray))
             {
-                
+               /* RGB or RGBA with color background */
                png_ptr->background_1.red = (png_uint_16)(pow(
                   (double)png_ptr->background.red / m, g) * m + .5);
                png_ptr->background_1.green = (png_uint_16)(pow(
@@ -1055,7 +1055,7 @@ png_init_read_transformations(png_structp png_ptr)
             }
             else
             {
-                
+               /* GRAY, GRAY ALPHA, RGB, or RGBA with gray background */
                png_ptr->background_1.red = png_ptr->background_1.green
                  = png_ptr->background_1.blue = png_ptr->background_1.gray;
                png_ptr->background.red = png_ptr->background.green
@@ -1064,8 +1064,8 @@ png_init_read_transformations(png_structp png_ptr)
          }
       }
       else
-       
-#endif  
+      /* Transformation does not include PNG_BACKGROUND */
+#endif /* PNG_READ_BACKGROUND_SUPPORTED */
       if (color_type == PNG_COLOR_TYPE_PALETTE)
       {
          png_colorp palette = png_ptr->palette;
@@ -1079,16 +1079,16 @@ png_init_read_transformations(png_structp png_ptr)
             palette[i].blue = png_ptr->gamma_table[palette[i].blue];
          }
 
-          
+         /* Done the gamma correction. */
          png_ptr->transformations &= ~PNG_GAMMA;
       }
    }
 #ifdef PNG_READ_BACKGROUND_SUPPORTED
    else
 #endif
-#endif  
+#endif /* PNG_READ_GAMMA_SUPPORTED && PNG_FLOATING_POINT_SUPPORTED */
 #ifdef PNG_READ_BACKGROUND_SUPPORTED
-    
+   /* No GAMMA transformation */
    if ((png_ptr->transformations & PNG_BACKGROUND) &&
        (color_type == PNG_COLOR_TYPE_PALETTE))
    {
@@ -1109,7 +1109,7 @@ png_init_read_transformations(png_structp png_ptr)
          }
          else if (png_ptr->trans_alpha[i] != 0xff)
          {
-             
+            /* The png_composite() macro is defined in png.h */
             png_composite(palette[i].red, palette[i].red,
                png_ptr->trans_alpha[i], back.red);
             png_composite(palette[i].green, palette[i].green,
@@ -1119,11 +1119,11 @@ png_init_read_transformations(png_structp png_ptr)
          }
       }
 
-       
+      /* Handled alpha, still need to strip the channel. */
       png_ptr->transformations &= ~PNG_BACKGROUND;
       png_ptr->transformations |= PNG_STRIP_ALPHA;
    }
-#endif  
+#endif /* PNG_READ_BACKGROUND_SUPPORTED */
 
 #ifdef PNG_READ_SHIFT_SUPPORTED
    if ((png_ptr->transformations & PNG_SHIFT) &&
@@ -1148,7 +1148,7 @@ png_init_read_transformations(png_structp png_ptr)
          png_ptr->palette[i].blue >>= sb;
       }
    }
-#endif   
+#endif  /* PNG_READ_SHIFT_SUPPORTED */
  }
 #if !defined(PNG_READ_GAMMA_SUPPORTED) && !defined(PNG_READ_SHIFT_SUPPORTED) \
  && !defined(PNG_READ_BACKGROUND_SUPPORTED)
@@ -1157,11 +1157,11 @@ png_init_read_transformations(png_structp png_ptr)
 #endif
 }
 
-                                                                 
-                                                                 
-                                                         
-   
-void  
+/* Modify the info structure to reflect the transformations.  The
+ * info should be updated so a PNG file could be written with it,
+ * assuming the transformations result in valid PNG data.
+ */
+void /* PRIVATE */
 png_read_transform_info(png_structp png_ptr, png_infop info_ptr)
 {
    png_debug(1, "in png_read_transform_info");
@@ -1262,13 +1262,13 @@ png_read_transform_info(png_structp png_ptr, png_infop info_ptr)
       info_ptr->channels++;
 
 #ifdef PNG_READ_FILLER_SUPPORTED
-    
+   /* STRIP_ALPHA and FILLER allowed:  MASK_ALPHA bit stripped above */
    if ((png_ptr->transformations & PNG_FILLER) &&
        ((info_ptr->color_type == PNG_COLOR_TYPE_RGB) ||
        (info_ptr->color_type == PNG_COLOR_TYPE_GRAY)))
    {
       info_ptr->channels++;
-       
+      /* If adding a true alpha channel not just filler */
       if (png_ptr->transformations & PNG_ADD_ALPHA)
         info_ptr->color_type |= PNG_COLOR_MASK_ALPHA;
    }
@@ -1296,11 +1296,11 @@ defined(PNG_READ_USER_TRANSFORM_SUPPORTED)
 #endif
 }
 
-                                                                   
-                                                                 
-                                                             
-   
-void  
+/* Transform the row.  The order of transformations is significant,
+ * and is very touchy.  If you add a transformation, take care to
+ * decide how it fits in with the other transformations here.
+ */
+void /* PRIVATE */
 png_do_read_transformations(png_structp png_ptr)
 {
    png_debug(1, "in png_do_read_transformations");
@@ -1320,10 +1320,10 @@ png_do_read_transformations(png_structp png_ptr)
    }
 #ifdef PNG_WARN_UNINITIALIZED_ROW
    if (!(png_ptr->flags & PNG_FLAG_ROW_INIT))
-                                                                     
-                                                                       
-                                                   
-         
+      /* Application has failed to call either png_read_start_image()
+       * or png_read_update_info() after setting transforms that expand
+       * pixels.  This check added to libpng-1.2.19
+       */
 #if (PNG_WARN_UNINITIALIZED_ROW==1)
       png_error(png_ptr, "Uninitialized row");
 #else
@@ -1377,41 +1377,41 @@ png_do_read_transformations(png_structp png_ptr)
    }
 #endif
 
-                                                              
-  
-                                                                           
-                                                                         
-                                                                     
-                                                 
-  
-                                       
-                                                                            
-                                                                               
-                                                                
-                                                                             
-                                                                
-  
-                                                        
-                                                                          
-                                                                            
-                                                                         
-                                                                        
-                                                                
-                                                                            
-                                                                 
-                                                                             
-                                                        
-  
-                                                                        
-                                                                               
-                                                                              
-                                                                   
-   
+/* From Andreas Dilger e-mail to png-implement, 26 March 1998:
+ *
+ *   In most cases, the "simple transparency" should be done prior to doing
+ *   gray-to-RGB, or you will have to test 3x as many bytes to check if a
+ *   pixel is transparent.  You would also need to make sure that the
+ *   transparency information is upgraded to RGB.
+ *
+ *   To summarize, the current flow is:
+ *   - Gray + simple transparency -> compare 1 or 2 gray bytes and composite
+ *                                   with background "in place" if transparent,
+ *                                   convert to RGB if necessary
+ *   - Gray + alpha -> composite with gray background and remove alpha bytes,
+ *                                   convert to RGB if necessary
+ *
+ *   To support RGB backgrounds for gray images we need:
+ *   - Gray + simple transparency -> convert to RGB + simple transparency,
+ *                                   compare 3 or 6 bytes and composite with
+ *                                   background "in place" if transparent
+ *                                   (3x compare/pixel compared to doing
+ *                                   composite with gray bkgrnd)
+ *   - Gray + alpha -> convert to RGB + alpha, composite with background and
+ *                                   remove alpha bytes (3x float
+ *                                   operations/pixel compared with composite
+ *                                   on gray background)
+ *
+ *  Greg's change will do this.  The reason it wasn't done before is for
+ *  performance, as this increases the per-pixel operations.  If we would check
+ *  in advance if the background was gray or RGB, and position the gray-to-RGB
+ *  transform appropriately, then it would save a lot of work/time.
+ */
 
 #ifdef PNG_READ_GRAY_TO_RGB_SUPPORTED
-                                                                             
-                             
-      
+   /* If gray -> RGB, do so now only if background is non-gray; else do later
+    * for performance reasons
+    */
    if ((png_ptr->transformations & PNG_GRAY_TO_RGB) &&
        !(png_ptr->mode & PNG_BACKGROUND_IS_GRAY))
       png_do_gray_to_rgb(&(png_ptr->row_info), png_ptr->row_buf + 1);
@@ -1488,7 +1488,7 @@ png_do_read_transformations(png_structp png_ptr)
 #endif
 
 #ifdef PNG_READ_GRAY_TO_RGB_SUPPORTED
-    
+   /* If gray -> RGB, do so now only if we did not do so above */
    if ((png_ptr->transformations & PNG_GRAY_TO_RGB) &&
        (png_ptr->mode & PNG_BACKGROUND_IS_GRAY))
       png_do_gray_to_rgb(&(png_ptr->row_info), png_ptr->row_buf + 1);
@@ -1519,16 +1519,16 @@ png_do_read_transformations(png_structp png_ptr)
    if (png_ptr->transformations & PNG_USER_TRANSFORM)
     {
       if (png_ptr->read_user_transform_fn != NULL)
-         (*(png_ptr->read_user_transform_fn))  
-            (png_ptr,                     
-               &(png_ptr->row_info),      
-                
-                
-                
-                
-                
-                
-               png_ptr->row_buf + 1);     
+         (*(png_ptr->read_user_transform_fn)) /* User read transform function */
+            (png_ptr,                    /* png_ptr */
+               &(png_ptr->row_info),     /* row_info: */
+               /*  png_uint_32 width;       width of row */
+               /*  png_uint_32 rowbytes;    number of bytes in row */
+               /*  png_byte color_type;     color type of pixels */
+               /*  png_byte bit_depth;      bit depth of samples */
+               /*  png_byte channels;       number of channels (1-4) */
+               /*  png_byte pixel_depth;    bits per pixel (depth*channels) */
+               png_ptr->row_buf + 1);    /* start of pixel data for row */
 #ifdef PNG_USER_TRANSFORM_PTR_SUPPORTED
       if (png_ptr->user_transform_depth)
          png_ptr->row_info.bit_depth = png_ptr->user_transform_depth;
@@ -1545,13 +1545,13 @@ png_do_read_transformations(png_structp png_ptr)
 }
 
 #ifdef PNG_READ_PACK_SUPPORTED
-                                                                    
-                                                                   
-                                                                    
-                                                                       
-                             
-   
-void  
+/* Unpack pixels of 1, 2, or 4 bits per pixel into 1 byte per pixel,
+ * without changing the actual values.  Thus, if you had a row with
+ * a bit depth of 1, you would end up with bytes that only contained
+ * the numbers 0 or 1.  If you would rather they contain 0 and 255, use
+ * png_do_shift() after this.
+ */
+void /* PRIVATE */
 png_do_unpack(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_unpack");
@@ -1635,12 +1635,12 @@ png_do_unpack(png_row_infop row_info, png_bytep row)
 #endif
 
 #ifdef PNG_READ_SHIFT_SUPPORTED
-                                                                       
-                                                                   
-                                                                    
-                                   
-   
-void  
+/* Reverse the effects of png_do_shift.  This routine merely shifts the
+ * pixels back to their significant bits values.  Thus, if you have
+ * a row of bit depth 8, but only 5 are significant, this will shift
+ * the values back to 0 through 31.
+ */
+void /* PRIVATE */
 png_do_unshift(png_row_infop row_info, png_bytep row, png_color_8p sig_bits)
 {
    png_debug(1, "in png_do_unshift");
@@ -1746,8 +1746,8 @@ png_do_unshift(png_row_infop row_info, png_bytep row, png_color_8p sig_bits)
 #endif
 
 #ifdef PNG_READ_16_TO_8_SUPPORTED
- 
-void  
+/* Chop rows of bit depth 16 down to 8 */
+void /* PRIVATE */
 png_do_chop(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_chop");
@@ -1762,34 +1762,34 @@ png_do_chop(png_row_infop row_info, png_bytep row)
       for (i = 0; i<istop; i++, sp += 2, dp++)
       {
 #ifdef PNG_READ_16_TO_8_ACCURATE_SCALE_SUPPORTED
-                                                              
-                                                         
-        
-                                              
-                                               
-                                                        
-                                        
-        
-                                                           
-                                               
-                                                    
-                                       
-        
-                                                       
-                                              
-                                                    
-                                           
-        
-                                                                           
-                                              
-                                                                     
-        
-                                                                    
-         
+      /* This does a more accurate scaling of the 16-bit color
+       * value, rather than a simple low-byte truncation.
+       *
+       * What the ideal calculation should be:
+       *   *dp = (((((png_uint_32)(*sp) << 8) |
+       *          (png_uint_32)(*(sp + 1))) * 255 + 127)
+       *          / (png_uint_32)65535L;
+       *
+       * GRR: no, I think this is what it really should be:
+       *   *dp = (((((png_uint_32)(*sp) << 8) |
+       *           (png_uint_32)(*(sp + 1))) + 128L)
+       *           / (png_uint_32)257L;
+       *
+       * GRR: here's the exact calculation with shifts:
+       *   temp = (((png_uint_32)(*sp) << 8) |
+       *           (png_uint_32)(*(sp + 1))) + 128L;
+       *   *dp = (temp - (temp >> 8)) >> 8;
+       *
+       * Approximate calculation with shift/add instead of multiply/divide:
+       *   *dp = ((((png_uint_32)(*sp) << 8) |
+       *          (png_uint_32)((int)(*(sp + 1)) - *sp)) + 128) >> 8;
+       *
+       * What we actually do to avoid extra shifting and conversion:
+       */
 
          *dp = *sp + ((((int)(*(sp + 1)) - *sp) > 128) ? 1 : 0);
 #else
-        
+       /* Simply discard the low order byte */
          *dp = *sp;
 #endif
       }
@@ -1801,7 +1801,7 @@ png_do_chop(png_row_infop row_info, png_bytep row)
 #endif
 
 #ifdef PNG_READ_SWAP_ALPHA_SUPPORTED
-void  
+void /* PRIVATE */
 png_do_read_swap_alpha(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_read_swap_alpha");
@@ -1810,7 +1810,7 @@ png_do_read_swap_alpha(png_row_infop row_info, png_bytep row)
       png_uint_32 row_width = row_info->width;
       if (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
       {
-          
+         /* This converts from RGBA to ARGB */
          if (row_info->bit_depth == 8)
          {
             png_bytep sp = row + row_info->rowbytes;
@@ -1827,7 +1827,7 @@ png_do_read_swap_alpha(png_row_infop row_info, png_bytep row)
                *(--dp) = save;
             }
          }
-          
+         /* This converts from RRGGBBAA to AARRGGBB */
          else
          {
             png_bytep sp = row + row_info->rowbytes;
@@ -1852,7 +1852,7 @@ png_do_read_swap_alpha(png_row_infop row_info, png_bytep row)
       }
       else if (row_info->color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
       {
-          
+         /* This converts from GA to AG */
          if (row_info->bit_depth == 8)
          {
             png_bytep sp = row + row_info->rowbytes;
@@ -1867,7 +1867,7 @@ png_do_read_swap_alpha(png_row_infop row_info, png_bytep row)
                *(--dp) = save;
             }
          }
-          
+         /* This converts from GGAA to AAGG */
          else
          {
             png_bytep sp = row + row_info->rowbytes;
@@ -1891,7 +1891,7 @@ png_do_read_swap_alpha(png_row_infop row_info, png_bytep row)
 #endif
 
 #ifdef PNG_READ_INVERT_ALPHA_SUPPORTED
-void  
+void /* PRIVATE */
 png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_read_invert_alpha");
@@ -1900,7 +1900,7 @@ png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
       png_uint_32 row_width = row_info->width;
       if (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
       {
-          
+         /* This inverts the alpha channel in RGBA */
          if (row_info->bit_depth == 8)
          {
             png_bytep sp = row + row_info->rowbytes;
@@ -1911,17 +1911,17 @@ png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
             {
                *(--dp) = (png_byte)(255 - *(--sp));
 
-                                 
-                                 
-                                 
-                                 
-                                      
-  
+/*             This does nothing:
+               *(--dp) = *(--sp);
+               *(--dp) = *(--sp);
+               *(--dp) = *(--sp);
+               We can replace it with:
+*/
                sp-=3;
                dp=sp;
             }
          }
-          
+         /* This inverts the alpha channel in RRGGBBAA */
          else
          {
             png_bytep sp = row + row_info->rowbytes;
@@ -1933,15 +1933,15 @@ png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
                *(--dp) = (png_byte)(255 - *(--sp));
                *(--dp) = (png_byte)(255 - *(--sp));
 
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-                                      
-  
+/*             This does nothing:
+               *(--dp) = *(--sp);
+               *(--dp) = *(--sp);
+               *(--dp) = *(--sp);
+               *(--dp) = *(--sp);
+               *(--dp) = *(--sp);
+               *(--dp) = *(--sp);
+               We can replace it with:
+*/
                sp-=6;
                dp=sp;
             }
@@ -1949,7 +1949,7 @@ png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
       }
       else if (row_info->color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
       {
-          
+         /* This inverts the alpha channel in GA */
          if (row_info->bit_depth == 8)
          {
             png_bytep sp = row + row_info->rowbytes;
@@ -1962,7 +1962,7 @@ png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
                *(--dp) = *(--sp);
             }
          }
-          
+         /* This inverts the alpha channel in GGAA */
          else
          {
             png_bytep sp  = row + row_info->rowbytes;
@@ -1973,10 +1973,10 @@ png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
             {
                *(--dp) = (png_byte)(255 - *(--sp));
                *(--dp) = (png_byte)(255 - *(--sp));
-  
-                                 
-                                 
-  
+/*
+               *(--dp) = *(--sp);
+               *(--dp) = *(--sp);
+*/
                sp-=2;
                dp=sp;
             }
@@ -1987,8 +1987,8 @@ png_do_read_invert_alpha(png_row_infop row_info, png_bytep row)
 #endif
 
 #ifdef PNG_READ_FILLER_SUPPORTED
- 
-void  
+/* Add filler channel if we have RGB color */
+void /* PRIVATE */
 png_do_read_filler(png_row_infop row_info, png_bytep row,
    png_uint_32 filler, png_uint_32 flags)
 {
@@ -2005,7 +2005,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
    {
       if (row_info->bit_depth == 8)
       {
-          
+         /* This changes the data from G to GX */
          if (flags & PNG_FLAG_FILLER_AFTER)
          {
             png_bytep sp = row + (png_size_t)row_width;
@@ -2020,7 +2020,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             row_info->pixel_depth = 16;
             row_info->rowbytes = row_width * 2;
          }
-       
+      /* This changes the data from G to XG */
          else
          {
             png_bytep sp = row + (png_size_t)row_width;
@@ -2037,7 +2037,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
       }
       else if (row_info->bit_depth == 16)
       {
-          
+         /* This changes the data from GG to GGXX */
          if (flags & PNG_FLAG_FILLER_AFTER)
          {
             png_bytep sp = row + (png_size_t)row_width * 2;
@@ -2055,7 +2055,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             row_info->pixel_depth = 32;
             row_info->rowbytes = row_width * 4;
          }
-          
+         /* This changes the data from GG to XXGG */
          else
          {
             png_bytep sp = row + (png_size_t)row_width * 2;
@@ -2072,12 +2072,12 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             row_info->rowbytes = row_width * 4;
          }
       }
-   }  
+   } /* COLOR_TYPE == GRAY */
    else if (row_info->color_type == PNG_COLOR_TYPE_RGB)
    {
       if (row_info->bit_depth == 8)
       {
-          
+         /* This changes the data from RGB to RGBX */
          if (flags & PNG_FLAG_FILLER_AFTER)
          {
             png_bytep sp = row + (png_size_t)row_width * 3;
@@ -2094,7 +2094,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             row_info->pixel_depth = 32;
             row_info->rowbytes = row_width * 4;
          }
-       
+      /* This changes the data from RGB to XRGB */
          else
          {
             png_bytep sp = row + (png_size_t)row_width * 3;
@@ -2113,7 +2113,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
       }
       else if (row_info->bit_depth == 16)
       {
-          
+         /* This changes the data from RRGGBB to RRGGBBXX */
          if (flags & PNG_FLAG_FILLER_AFTER)
          {
             png_bytep sp = row + (png_size_t)row_width * 6;
@@ -2135,7 +2135,7 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             row_info->pixel_depth = 64;
             row_info->rowbytes = row_width * 8;
          }
-          
+         /* This changes the data from RRGGBB to XXRRGGBB */
          else
          {
             png_bytep sp = row + (png_size_t)row_width * 6;
@@ -2156,13 +2156,13 @@ png_do_read_filler(png_row_infop row_info, png_bytep row,
             row_info->rowbytes = row_width * 8;
          }
       }
-   }  
+   } /* COLOR_TYPE == RGB */
 }
 #endif
 
 #ifdef PNG_READ_GRAY_TO_RGB_SUPPORTED
- 
-void  
+/* Expand grayscale files to RGB, with or without alpha */
+void /* PRIVATE */
 png_do_gray_to_rgb(png_row_infop row_info, png_bytep row)
 {
    png_uint_32 i;
@@ -2242,28 +2242,28 @@ png_do_gray_to_rgb(png_row_infop row_info, png_bytep row)
 #endif
 
 #ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
-                                                       
-                                                    
-                                                                     
-            
-                                                   
-                                         
-  
-                                                     
-  
-                            
-  
-                                                       
-  
-                                           
-  
-                                                  
-  
-                                                         
-  
-                                                                    
-   
-int  
+/* Reduce RGB files to grayscale, with or without alpha
+ * using the equation given in Poynton's ColorFAQ at
+ * <http://www.inforamp.net/~poynton/>  (THIS LINK IS DEAD June 2008)
+ * New link:
+ * <http://www.poynton.com/notes/colour_and_gamma/>
+ * Charles Poynton poynton at poynton.com
+ *
+ *     Y = 0.212671 * R + 0.715160 * G + 0.072169 * B
+ *
+ *  We approximate this with
+ *
+ *     Y = 0.21268 * R    + 0.7151 * G    + 0.07217 * B
+ *
+ *  which can be expressed with integers as
+ *
+ *     Y = (6969 * R + 23434 * G + 2365 * B)/32768
+ *
+ *  The calculation is to be done in a linear colorspace.
+ *
+ *  Other integer coefficents can be used via png_set_rgb_to_gray().
+ */
+int /* PRIVATE */
 png_do_rgb_to_gray(png_structp png_ptr, png_row_infop row_info, png_bytep row)
 
 {
@@ -2327,7 +2327,7 @@ png_do_rgb_to_gray(png_structp png_ptr, png_row_infop row_info, png_bytep row)
             }
          }
 
-         else  
+         else /* RGB bit_depth == 16 */
          {
 #if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED)
             if (png_ptr->gamma_16_to_1 != NULL &&
@@ -2405,7 +2405,7 @@ png_do_rgb_to_gray(png_structp png_ptr, png_row_infop row_info, png_bytep row)
                      rgb_error |= 1;
                   *(dp++) =  png_ptr->gamma_from_1
                              [(rc*red + gc*green + bc*blue)>>15];
-                  *(dp++) = *(sp++);   
+                  *(dp++) = *(sp++);  /* alpha */
                }
             }
             else
@@ -2421,11 +2421,11 @@ png_do_rgb_to_gray(png_structp png_ptr, png_row_infop row_info, png_bytep row)
                   if (red != green || red != blue)
                      rgb_error |= 1;
                   *(dp++) =  (png_byte)((rc*red + gc*green + bc*blue)>>15);
-                  *(dp++) = *(sp++);   
+                  *(dp++) = *(sp++);  /* alpha */
                }
             }
          }
-         else  
+         else /* RGBA bit_depth == 16 */
          {
 #if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_READ_BACKGROUND_SUPPORTED)
             if (png_ptr->gamma_16_to_1 != NULL &&
@@ -2461,7 +2461,7 @@ png_do_rgb_to_gray(png_structp png_ptr, png_row_infop row_info, png_bytep row)
 
                   *(dp++) = (png_byte)((w>>8) & 0xff);
                   *(dp++) = (png_byte)(w & 0xff);
-                  *(dp++) = *(sp++);   
+                  *(dp++) = *(sp++);  /* alpha */
                   *(dp++) = *(sp++);
                }
             }
@@ -2481,7 +2481,7 @@ png_do_rgb_to_gray(png_structp png_ptr, png_row_infop row_info, png_bytep row)
                   gray16  = (png_uint_16)((rc*red + gc*green + bc*blue)>>15);
                   *(dp++) = (png_byte)((gray16>>8) & 0xff);
                   *(dp++) = (png_byte)(gray16 & 0xff);
-                  *(dp++) = *(sp++);   
+                  *(dp++) = *(sp++);  /* alpha */
                   *(dp++) = *(sp++);
                }
             }
@@ -2497,11 +2497,11 @@ png_do_rgb_to_gray(png_structp png_ptr, png_row_infop row_info, png_bytep row)
 }
 #endif
 
-                                                                      
-                                                                
-                                                                 
-           
-   
+/* Build a grayscale palette.  Palette is assumed to be 1 << bit_depth
+ * large of png_color.  This lets grayscale images be treated as
+ * paletted.  Most useful for gamma correction and simplification
+ * of code.
+ */
 void PNGAPI
 png_build_grayscale_palette(int bit_depth, png_colorp palette)
 {
@@ -2553,11 +2553,11 @@ png_build_grayscale_palette(int bit_depth, png_colorp palette)
 
 
 #ifdef PNG_READ_BACKGROUND_SUPPORTED
-                                                                        
-                                                                       
-                                                                      
-   
-void  
+/* Replace any alpha or transparency with the supplied background color.
+ * "background" is already in the screen gamma, while "background_1" is
+ * at a gamma of 1.0.  Paletted files have already been taken care of.
+ */
+void /* PRIVATE */
 png_do_background(png_row_infop row_info, png_bytep row,
    png_color_16p trans_color, png_color_16p background
 #ifdef PNG_READ_GAMMA_SUPPORTED
@@ -2768,7 +2768,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                         v = (png_uint_16)(((*sp) << 8) + *(sp + 1));
                         if (v == trans_color->gray)
                         {
-                            
+                           /* Background is already in screen gamma */
                            *sp = (png_byte)((background->gray >> 8) & 0xff);
                            *(sp + 1) = (png_byte)(background->gray & 0xff);
                         }
@@ -2845,7 +2845,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                   }
                }
             }
-            else  
+            else /* if (row_info->bit_depth == 16) */
             {
 #ifdef PNG_READ_GAMMA_SUPPORTED
                if (gamma_16 != NULL)
@@ -2859,7 +2859,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                      if (r == trans_color->red && g == trans_color->green &&
                         b == trans_color->blue)
                      {
-                         
+                        /* Background is already in screen gamma */
                         *sp = (png_byte)((background->red >> 8) & 0xff);
                         *(sp + 1) = (png_byte)(background->red & 0xff);
                         *(sp + 2) = (png_byte)((background->green >> 8) & 0xff);
@@ -2927,7 +2927,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                      }
                      else if (a == 0)
                      {
-                         
+                        /* Background is already in screen gamma */
                         *dp = (png_byte)background->gray;
                      }
                      else
@@ -2968,7 +2968,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                   }
                }
             }
-            else  
+            else /* if (png_ptr->bit_depth == 16) */
             {
 #ifdef PNG_READ_GAMMA_SUPPORTED
                if (gamma_16 != NULL && gamma_16_from_1 != NULL &&
@@ -2994,7 +2994,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                      else
 #endif
                      {
-                         
+                        /* Background is already in screen gamma */
                         *dp = (png_byte)((background->gray >> 8) & 0xff);
                         *(dp + 1) = (png_byte)(background->gray & 0xff);
                      }
@@ -3072,7 +3072,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                      }
                      else if (a == 0)
                      {
-                         
+                        /* Background is already in screen gamma */
                         *dp = (png_byte)background->red;
                         *(dp + 1) = (png_byte)background->green;
                         *(dp + 2) = (png_byte)background->blue;
@@ -3125,7 +3125,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                   }
                }
             }
-            else  
+            else /* if (row_info->bit_depth == 16) */
             {
 #ifdef PNG_READ_GAMMA_SUPPORTED
                if (gamma_16 != NULL && gamma_16_from_1 != NULL &&
@@ -3153,7 +3153,7 @@ png_do_background(png_row_infop row_info, png_bytep row,
                      }
                      else if (a == 0)
                      {
-                         
+                        /* Background is already in screen gamma */
                         *dp = (png_byte)((background->red >> 8) & 0xff);
                         *(dp + 1) = (png_byte)(background->red & 0xff);
                         *(dp + 2) = (png_byte)((background->green >> 8) & 0xff);
@@ -3245,13 +3245,13 @@ png_do_background(png_row_infop row_info, png_bytep row,
 #endif
 
 #ifdef PNG_READ_GAMMA_SUPPORTED
-                                                                  
-                                                                      
-                                                                
-                                                               
-                       
-   
-void  
+/* Gamma correct the image, avoiding the alpha channel.  Make sure
+ * you do this after you deal with the transparency issue on grayscale
+ * or RGB images. If your bit depth is 8, use gamma_table, if it
+ * is 16, use gamma_16_table and gamma_shift.  Build these with
+ * build_gamma_table().
+ */
+void /* PRIVATE */
 png_do_gamma(png_row_infop row_info, png_bytep row,
    png_bytep gamma_table, png_uint_16pp gamma_16_table,
    int gamma_shift)
@@ -3283,7 +3283,7 @@ png_do_gamma(png_row_infop row_info, png_bytep row,
                   sp++;
                }
             }
-            else  
+            else /* if (row_info->bit_depth == 16) */
             {
                sp = row;
                for (i = 0; i < row_width; i++)
@@ -3323,7 +3323,7 @@ png_do_gamma(png_row_infop row_info, png_bytep row,
                   sp++;
                }
             }
-            else  
+            else /* if (row_info->bit_depth == 16) */
             {
                sp = row;
                for (i = 0; i < row_width; i++)
@@ -3356,7 +3356,7 @@ png_do_gamma(png_row_infop row_info, png_bytep row,
                   sp += 2;
                }
             }
-            else  
+            else /* if (row_info->bit_depth == 16) */
             {
                sp = row;
                for (i = 0; i < row_width; i++)
@@ -3434,10 +3434,10 @@ png_do_gamma(png_row_infop row_info, png_bytep row,
 #endif
 
 #ifdef PNG_READ_EXPAND_SUPPORTED
-                                                        
-                                               
-   
-void  
+/* Expands a palette row to an RGB or RGBA row depending
+ * upon whether you supply trans and num_trans.
+ */
+void /* PRIVATE */
 png_do_expand_palette(png_row_infop row_info, png_bytep row,
    png_colorp palette, png_bytep trans_alpha, int num_trans)
 {
@@ -3578,10 +3578,10 @@ png_do_expand_palette(png_row_infop row_info, png_bytep row,
    }
 }
 
-                                                                   
-                                                                      
-   
-void  
+/* If the bit depth < 8, it is expanded to 8.  Also, if the already
+ * expanded transparency value is supplied, an alpha channel is built.
+ */
+void /* PRIVATE */
 png_do_expand(png_row_infop row_info, png_bytep row,
    png_color_16p trans_value)
 {
@@ -3791,7 +3791,7 @@ png_do_expand(png_row_infop row_info, png_bytep row,
 #endif
 
 #ifdef PNG_READ_DITHER_SUPPORTED
-void  
+void /* PRIVATE */
 png_do_dither(png_row_infop row_info, png_bytep row,
     png_bytep palette_lookup, png_bytep dither_lookup)
 {
@@ -3814,13 +3814,13 @@ png_do_dither(png_row_infop row_info, png_bytep row,
             g = *sp++;
             b = *sp++;
 
-                                                                  
-                                                                  
-                                        
-                                              
-                                            
-                                    
-               
+            /* This looks real messy, but the compiler will reduce
+             * it down to a reasonable formula.  For example, with
+             * 5 bits per color, we get:
+             * p = (((r >> 3) & 0x1f) << 10) |
+             *    (((g >> 3) & 0x1f) << 5) |
+             *    ((b >> 3) & 0x1f);
+             */
             p = (((r >> (8 - PNG_DITHER_RED_BITS)) &
                ((1 << PNG_DITHER_RED_BITS) - 1)) <<
                (PNG_DITHER_GREEN_BITS + PNG_DITHER_BLUE_BITS)) |
@@ -3884,41 +3884,41 @@ png_do_dither(png_row_infop row_info, png_bytep row,
 static PNG_CONST int png_gamma_shift[] =
    {0x10, 0x21, 0x42, 0x84, 0x110, 0x248, 0x550, 0xff0, 0x00};
 
-                                                                     
-                                                                    
-                                                                       
-                                                                  
-  
-                                                                        
-                                                                
-  
-                                     
-  
-                                                                         
-                                                     
-  
-        
-         
-                                    
-  
-          
-  
-                                                        
-         
-  
-        
-         
-                                                                   
-                                                          
-  
-          
-  
-                                                                   
-                                                                        
-         
-   
+/* We build the 8- or 16-bit gamma tables here.  Note that for 16-bit
+ * tables, we don't make a full table if we are reducing to 8-bit in
+ * the future.  Note also how the gamma_16 tables are segmented so that
+ * we don't need to allocate > 64K chunks for a full 16-bit table.
+ *
+ * See the PNG extensions document for an integer algorithm for creating
+ * the gamma tables.  Maybe we will implement that here someday.
+ *
+ * We should only reach this point if
+ *
+ *      the file_gamma is known (i.e., the gAMA or sRGB chunk is present,
+ *      or the application has provided a file_gamma)
+ *
+ *   AND
+ *      {
+ *         the screen_gamma is known
+ *
+ *      OR
+ *
+ *         RGB_to_gray transformation is being performed
+ *      }
+ *
+ *   AND
+ *      {
+ *         the screen_gamma is different from the reciprocal of the
+ *         file_gamma by more than the specified threshold
+ *
+ *      OR
+ *
+ *         a background color has been specified and the file_gamma
+ *         and screen_gamma are not 1.0, within the specified threshold.
+ *      }
+ */
 
-void  
+void /* PRIVATE */
 png_build_gamma_table(png_structp png_ptr, png_byte bit_depth)
 {
   png_debug(1, "in png_build_gamma_table");
@@ -3967,7 +3967,7 @@ png_build_gamma_table(png_structp png_ptr, png_byte bit_depth)
            g = 1.0 / png_ptr->screen_gamma;
 
         else
-           g = png_ptr->gamma;    
+           g = png_ptr->gamma;   /* Probably doing rgb_to_gray */
 
         for (i = 0; i < 256; i++)
         {
@@ -3976,7 +3976,7 @@ png_build_gamma_table(png_structp png_ptr, png_byte bit_depth)
 
         }
      }
-#endif  
+#endif /* PNG_READ_BACKGROUND_SUPPORTED || PNG_RGB_TO_GRAY_SUPPORTED */
   }
   else
   {
@@ -4110,7 +4110,7 @@ png_build_gamma_table(png_structp png_ptr, png_byte bit_depth)
            g = 1.0 / png_ptr->screen_gamma;
 
         else
-           g = png_ptr->gamma;    
+           g = png_ptr->gamma;   /* Probably doing rgb_to_gray */
 
         png_ptr->gamma_16_from_1 = (png_uint_16pp)png_calloc(png_ptr,
            (png_uint_32)(num * png_sizeof(png_uint_16p)));
@@ -4131,16 +4131,16 @@ png_build_gamma_table(png_structp png_ptr, png_byte bit_depth)
            }
         }
      }
-#endif  
+#endif /* PNG_READ_BACKGROUND_SUPPORTED || PNG_RGB_TO_GRAY_SUPPORTED */
   }
 }
 #endif
- 
+/* To do: install integer version of png_build_gamma_table here */
 #endif
 
 #ifdef PNG_MNG_FEATURES_SUPPORTED
- 
-void  
+/* Undoes intrapixel differencing  */
+void /* PRIVATE */
 png_do_read_intrapixel(png_row_infop row_info, png_bytep row)
 {
    png_debug(1, "in png_do_read_intrapixel");
@@ -4199,5 +4199,5 @@ png_do_read_intrapixel(png_row_infop row_info, png_bytep row)
       }
    }
 }
-#endif  
-#endif  
+#endif /* PNG_MNG_FEATURES_SUPPORTED */
+#endif /* PNG_READ_SUPPORTED */

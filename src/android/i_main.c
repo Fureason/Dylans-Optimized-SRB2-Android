@@ -11,15 +11,15 @@
 
 int srb2_main()
 {
-
+        // startup SRB2
         CONS_Printf ("Setting up SRB2 (fo' real)...");
         D_SRB2Main();
         CONS_Printf ("Entering main game loop...");
-
+        // never return
         D_SRB2Loop();
         LOGD("Control left SRB2.  Good bye.");
 
-
+        // return to OS
         return 0;
 }
 
@@ -28,7 +28,7 @@ JNIEXPORT jint JNICALL Java_org_srb2_nativecode_Main_main
   jobject fbBuf;
   jfieldID fbBufField;
 
-
+  // a global reference to JNI Env, so my callbacks can use it:
   jni_env = env;
   androidVideo = video;
 
